@@ -1,0 +1,14 @@
+{
+  "name": "datahub-cloud",
+  "metadata": {
+    "description": "Connect Claude to your DataHub Cloud instance. Search your data catalog, enrich metadata, trace lineage, manage data quality, and set up connections — all using the DataHub Cloud MCP server."
+  },
+  "owner": { "name": "DataHub Project" },
+  "plugins": [
+    {
+      "name": "datahub-cloud",
+      "source": "./",
+      "description": "DataHub Cloud catalog assistant — search, enrich, lineage, quality, and setup via MCP"
+    }
+  ]
+}
