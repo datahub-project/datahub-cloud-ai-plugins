@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "DataHub Cloud plugin — search the catalog, enrich metadata, trace lineage, manage data quality, and set up your DataHub Cloud connection directly from Claude",
   "author": { "name": "DataHub Project" },
-  "homepage": "https://github.com/datahub-project/datahub-cloud-claude-plugin",
-  "repository": "https://github.com/datahub-project/datahub-cloud-claude-plugin",
+  "homepage": "https://github.com/datahub-project/datahub-cloud-ai-plugins",
+  "repository": "https://github.com/datahub-project/datahub-cloud-ai-plugins",
   "license": "Apache-2.0"
 }

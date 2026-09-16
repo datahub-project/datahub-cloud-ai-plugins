@@ -5,7 +5,7 @@ A Claude plugin that connects Claude to your [DataHub Cloud](https://datahubproj
 ## Installation
 
 ```bash
-npx skills add datahub-project/datahub-cloud-claude-plugin
+npx skills add datahub-project/datahub-cloud-ai-plugins
 ```
 
 Or search for **datahub-cloud** in the Claude marketplace.

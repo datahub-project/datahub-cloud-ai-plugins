@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "claudeVersion": "2.1.273",
+  "startedAt": "2026-09-16T04:47:45.471Z",
+  "durationSeconds": 2,
+  "costUsd": 0.000639,
+  "partial": true,
+  "partialReason": "auth_failed",
+  "suite": {
+    "root": "/Users/john/code/datahub-cloud-claude-plugin",
+    "ablation": "none",
+    "tagFilters": [
+      "smoke"
+    ],
+    "threshold": 1,
+    "concurrency": 1,
+    "plugins": [
+      {
+        "name": "datahub-cloud",
+        "version": "1.0.0",
+        "path": "/Users/john/code/datahub-cloud-claude-plugin"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "lineage-upstream",
+      "dir": "evals/lineage-upstream",
+      "source": "prose",
+      "promptMarkdown": "Where does the orders table get its data from? Show me its upstream sources.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 6,
+      "graders": [
+        {
+          "name": "lineage-tool-called",
+          "type": "tool_used",
+          "weight": 2,
+          "config": {
+            "tool": "mcp__datahub__get_lineage",
+            "min": 1
+          }
+        },
+        {
+          "name": "response-quality",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "PASS if the response:\n- Identifies both upstream sources (the Kafka topic orders-events and the dbt staging model stg_orders)\n- Clearly describes the direction as upstream (where the data comes from)\n- Mentions the platforms (Kafka, dbt)\n\nFAIL if the response:\n- Confuses upstream and downstream\n- Invents sources not present in the lineage results\n- Reports only one upstream source without explaining the other",
+          "config": {
+            "criteria": "PASS if the response:\n- Identifies both upstream sources (the Kafka topic orders-events and the dbt staging model stg_orders)\n- Clearly describes the direction as upstream (where the data comes from)\n- Mentions the platforms (Kafka, dbt)\n\nFAIL if the response:\n- Confuses upstream and downstream\n- Invents sources not present in the lineage results\n- Reports only one upstream source without explaining the other",
+            "focus": "last_message"
+          }
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 3,
+          "config": {
+            "tool": "Skill",
+            "input_match": "datahub-cloud:datahub-lineage",
+            "min": 1,
+            "arm": "with-only"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 0,
+            "passed": false,
+            "turns": 1,
+            "costUsd": 0.000639,
+            "judgeCostUsd": 0.000639,
+            "durationSeconds": 2,
+            "startedAt": "2026-09-16T04:47:45.493Z",
+            "error": "exit 1: Not logged in · Please run /login",
+            "tracePath": "/private/tmp/e-Oxr2Cm/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "mocks": {
+              "servers": [
+                {
+                  "server": "datahub",
+                  "kind": "shadow",
+                  "tools": [
+                    {
+                      "tool": "get_lineage",
+                      "responder": "fixed"
+                    },
+                    {
+                      "tool": "search",
+                      "responder": "fixed"
+                    }
+                  ]
+                }
+              ],
+              "warnings": [
+                "datahub: no _tools.json entry for get_lineage, search — served with a permissive schema and no description; save the server's tools/list response as mocks/datahub/_tools.json so the model sees the real tool"
+              ],
+              "calls": {
+                "total": 0,
+                "errors": 0,
+                "unmocked": [],
+                "costUsd": 0,
+                "replay": {
+                  "hits": 0,
+                  "misses": 0
+                }
+              }
+            },
+            "graders": [
+              {
+                "name": "lineage-tool-called",
+                "passed": false,
+                "weight": 2,
+                "explanation": "mcp__datahub__get_lineage called 0x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "response-quality",
+                "passed": false,
+                "weight": 1,
+                "explanation": "judge votes: FAIL FAIL FAIL",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  false,
+                  false,
+                  false
+                ],
+                "evidence": "Not logged in · Please run /login"
+              },
+              {
+                "name": "skill-fired",
+                "passed": false,
+                "weight": 3,
+                "explanation": "Skill called 0x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 0,
+        "passRate": 0
+      }
+    }
+  ],
+  "aggregates": {
+    "casesTotal": 1,
+    "casesPassed": 0,
+    "overallScore": 0,
+    "overallPassRate": 0
+  }
+}
