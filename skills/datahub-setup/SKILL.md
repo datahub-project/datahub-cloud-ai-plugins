@@ -1,45 +1,45 @@
 ---
 name: datahub-setup
-description: Help the user configure and verify their DataHub Cloud connection in Claude Code — set up the MCP server, test connectivity, and confirm authentication is working.
+description: Verify and troubleshoot the DataHub Cloud connection — confirm the MCP server is reachable, authentication is working, and Claude can access the catalog. Use when the user wants to set up DataHub, test the connection, or fix connectivity issues.
 version: "1.0.0"
 ---
 
 # DataHub Setup Skill
 
-Guide the user through connecting Claude Code to their DataHub Cloud instance via the MCP server.
+Help users verify and troubleshoot their DataHub Cloud connection via the MCP server.
 
-## Capabilities
-- Verify the MCP server is reachable and authenticated
-- Help configure authentication (personal access tokens)
-- Test connectivity by running a simple search
-- Troubleshoot common connection issues
-
-## Workflow
-
-1. **Check connectivity** — attempt a simple MCP call to verify the server is reachable
-2. **Verify authentication** — confirm the user's token is valid and has the right permissions
-3. **Run a smoke test** — execute a simple catalog search to confirm end-to-end functionality
-4. **Report status** — clearly state whether the connection is working and what instance it's connected to
-
-## MCP Server Details
-- **URL**: `https://mcp.datahub.com/mcp`
-- **Auth**: Personal Access Token (PAT) from DataHub Cloud Settings → Access Tokens
-- **Transport**: HTTP
-
-## Configuration
-
-The DataHub Cloud MCP server is pre-configured in this plugin's `.mcp.json`. If authentication is required, users typically need to set their PAT as an environment variable or pass it in the MCP server configuration.
-
-Common environment variable: `DATAHUB_TOKEN`
-
-## Troubleshooting
-- **401 Unauthorized**: Token is missing or expired — generate a new one from DataHub Cloud Settings
-- **403 Forbidden**: Token exists but lacks permissions — contact your DataHub admin
-- **Connection refused / timeout**: Check network access to `mcp.datahub.com`
-- **No results returned**: Authentication may be working but the user's permissions scope may be limited
-
-## Examples
-- "Set up my DataHub Cloud connection"
-- "Test if DataHub is connected"
+## When to use this skill
+- "Set up my DataHub connection"
+- "Is DataHub connected?"
 - "Why isn't DataHub working?"
 - "How do I authenticate with DataHub Cloud?"
+
+## How the connection works
+
+This plugin connects to DataHub Cloud via the MCP server at `https://mcp.datahub.com/mcp`. No CLI installation is needed. Authentication uses a **Personal Access Token (PAT)** from your DataHub Cloud instance.
+
+## Verification workflow
+
+1. **Test connectivity** — call `get_me` to confirm the MCP server is reachable and the token is valid; this returns the authenticated user's profile
+2. **Smoke test** — run a simple `search` call to confirm catalog access is working end-to-end
+3. **Report status** — clearly state whether the connection is working and, if not, what the specific issue is
+
+## Getting a Personal Access Token
+
+1. Log into your DataHub Cloud instance
+2. Go to **Settings → Access Tokens**
+3. Click **Generate new token** — copy and store it securely
+4. Set it as the `DATAHUB_TOKEN` environment variable, or configure it in your MCP client settings
+
+## Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| 401 Unauthorized | Token missing or expired | Generate a new token in DataHub Cloud Settings |
+| 403 Forbidden | Token lacks permissions | Contact your DataHub admin to expand token scope |
+| Connection timeout | Network can't reach mcp.datahub.com | Check firewall or VPN settings |
+| Empty results | Token works but has limited scope | Verify the token has catalog read access |
+
+## Rules
+- Never display or log token values — always mask as `<REDACTED>` if asked to show configuration
+- Do not guide users through CLI installation — this plugin uses the MCP server only

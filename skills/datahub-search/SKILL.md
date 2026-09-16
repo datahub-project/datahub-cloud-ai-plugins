@@ -1,36 +1,43 @@
 ---
 name: datahub-search
-description: Search and explore the DataHub Cloud data catalog — find datasets, dashboards, pipelines, columns, and any metadata entity by name, owner, tag, domain, or description. Use this when the user wants to find or discover anything in their data catalog.
+description: Search and explore the DataHub Cloud data catalog — find datasets, dashboards, pipelines, columns, owners, tags, domains, and any metadata. Use when the user wants to find, discover, or look up anything in their data catalog.
 version: "1.0.0"
 ---
 
 # DataHub Search Skill
 
-Use the `datahub` MCP tools to search and explore the DataHub Cloud catalog.
+Help users find and explore their data catalog using DataHub MCP tools.
 
-## Capabilities
-- Search for any entity: datasets, dashboards, charts, data jobs, data flows, ML models, glossary terms, and more
-- Filter by owner, tag, domain, platform, environment
-- Look up schema details and column-level metadata
-- Retrieve entity URNs for use in other operations
+## When to use this skill
+- "Find datasets about orders"
+- "Who owns the revenue table?"
+- "What's in the Finance domain?"
+- "Show me Snowflake tables tagged PII"
+- "What columns does the customer table have?"
+
+## When NOT to use this skill
+- Lineage questions ("what feeds into X?") → use `datahub-cloud:datahub-lineage`
+- Data quality questions ("is this table healthy?") → use `datahub-cloud:datahub-quality`
+- SQL help → use `datahub-cloud:datahub-sql-workflow`
 
 ## Workflow
 
-1. **Clarify the query** — understand what the user is looking for (entity type, keywords, filters)
-2. **Search** — use `search` or `search_across_entities` MCP tool with appropriate filters
-3. **Retrieve details** — for the most relevant results, fetch entity aspects (schema, ownership, tags, glossary terms, etc.)
-4. **Present results** — summarize clearly with names, URNs, platforms, and descriptions
+1. **Understand the request** — identify what the user is looking for: an entity name, an owner, a tag, a domain, a platform, or a concept
+2. **Search** — use MCP search tools with the most relevant filters
+3. **Fetch details** — for top results, retrieve schema, ownership, tags, glossary terms, and descriptions
+4. **Present clearly** — summarize results in plain language; include entity names, platforms, and links when available
+
+## MCP tools to use
+- `search` — find entities by keyword, type, platform, owner, tag, domain
+- `get_entities` — fetch full details (schema, ownership, tags, glossary terms, descriptions) for a known URN
+- `list_schema_fields` — list columns for a dataset
+- `search_documents` — search curated documentation and business context
+- `grep_documents` — search document content for specific terms
 
 ## Rules
-- Always include the entity URN in your response so users can navigate directly
-- Use GraphQL projection to fetch only the aspects you need — avoid fetching everything
-- For ambiguous queries, ask the user to clarify before searching
-- Check the `siblings` aspect when retrieving dataset details — it links related entities across environments
-- Popularity sorting is available in DataHub Cloud; use it when ranking matters
-- Never fabricate entity names or URNs — only report what MCP tools return
-
-## Examples
-- "Find all Snowflake tables owned by the Data Engineering team"
-- "Search for dashboards tagged with PII"
-- "Show me schemas for the orders dataset"
-- "What datasets are in the Finance domain?"
+- Use DataHub MCP tools exclusively — do not use the DataHub CLI
+- Always include the entity URN in responses so users can navigate directly
+- When the query is ambiguous, ask one clarifying question before searching
+- Never fabricate entity names, owners, or URNs — only report what the MCP tools return
+- If no results are found, say so clearly and suggest broadening the search
+- Limit results to the most relevant 5–10; offer to show more if asked

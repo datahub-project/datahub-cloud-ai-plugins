@@ -1,37 +1,47 @@
 ---
 name: datahub-lineage
-description: Explore and visualize data lineage in DataHub Cloud — trace upstream and downstream dependencies for datasets, pipelines, and dashboards. Use this when the user wants to understand where data comes from or where it flows.
+description: Explore data lineage in DataHub Cloud — trace where data comes from (upstream) and where it flows (downstream), understand pipeline dependencies, and assess the impact of changes. Use when the user asks about data origins, dependencies, or flow.
 version: "1.0.0"
 ---
 
 # DataHub Lineage Skill
 
-Use the `datahub` MCP tools to explore lineage relationships across the catalog.
+Help users understand data flow and dependencies using DataHub MCP tools.
 
-## Capabilities
-- Trace upstream lineage (where does this data come from?)
-- Trace downstream lineage (what depends on this data?)
-- Identify column-level lineage when available
-- Find impact of changes — what breaks if this dataset changes?
-- Summarize the lineage graph in plain language
+## When to use this skill
+- "Where does the orders table come from?"
+- "What depends on the customer_dim dataset?"
+- "What would break if we changed this table?"
+- "Show me the pipeline for revenue metrics"
+- "Trace lineage from Kafka to the dashboard"
+
+## When NOT to use this skill
+- General catalog search → use `datahub-cloud:datahub-search`
+- Data quality questions → use `datahub-cloud:datahub-quality`
 
 ## Workflow
 
-1. **Identify the starting entity** — find the entity URN using search if not provided
-2. **Determine direction** — upstream, downstream, or both
-3. **Set depth** — ask the user if they want a full graph or just immediate dependencies
-4. **Fetch lineage** — use the lineage MCP tools with appropriate hop depth
-5. **Summarize** — present the lineage clearly, highlighting critical paths and important dependencies
+1. **Identify the starting entity** — use the entity name or URN provided; if unclear, search for it first
+2. **Determine direction**:
+   - *"Where does it come from?"* → upstream traversal
+   - *"What depends on it?"* → downstream traversal
+   - *"Show me the full pipeline"* → both directions
+3. **Fetch lineage** — use MCP lineage tools, defaulting to 3 hops; ask the user if they want to go deeper
+4. **Summarize clearly** — describe the lineage path in plain language; note any critical dependencies or single points of failure
+
+## Presenting results
+- Lead with the most important path (e.g. direct upstream sources or top-level downstream consumers)
+- For large graphs, summarize the shape ("5 upstream sources, 12 downstream consumers") before listing details
+- Highlight entities that many others depend on
+- Note when column-level lineage is available for a given platform
+
+## MCP tools to use
+- `search` — find the starting entity if no URN is provided
+- `get_lineage` — traverse upstream or downstream lineage from an entity
+- `get_lineage_paths_between` — find all paths between two specific entities
+- `get_entities` — fetch additional details (owner, description) for entities in the lineage graph
 
 ## Rules
-- Limit lineage hops to 3 by default; ask the user if they want to go deeper
-- When presenting large graphs, summarize the most important paths first
-- Highlight entities that appear as single points of failure (many dependents, no alternatives)
-- If column-level lineage is requested, note when it's not available for a given platform
-- Never infer lineage — only report what MCP tools return
-
-## Examples
-- "What are the upstream sources for the revenue_metrics dataset?"
-- "Show me everything that depends on the orders Snowflake table"
-- "Trace lineage from the Kafka topic to the dashboard"
-- "What would break if I deleted the customer_dim table?"
+- Use DataHub MCP tools exclusively — do not use the DataHub CLI
+- Never infer or guess lineage relationships — only report what MCP tools return
+- If lineage is unavailable for an entity, explain that lineage may not have been ingested for that platform
