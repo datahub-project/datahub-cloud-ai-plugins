@@ -1,6 +1,6 @@
 ---
 type: tool_order
-first: mcp__datahub__get_dataset_queries
-then: mcp__datahub__list_schema_fields
+before: mcp__datahub__get_dataset_queries
+after: mcp__datahub__list_schema_fields
 weight: 2
 ---
