@@ -1,6 +1,6 @@
-# DataHub Cloud — Claude Plugin
+# DataHub Cloud — AI Plugins
 
-A Claude plugin that connects Claude to your [DataHub Cloud](https://datahubproject.io) instance via the DataHub MCP server — enabling catalog search, lineage exploration, data quality monitoring, and SQL grounded in real metadata.
+Plugins that connect Claude, Codex, & ChatGPT to your [DataHub Cloud](https://datahubproject.io) instance via the DataHub MCP server — enabling catalog search, lineage exploration, data quality monitoring, and SQL grounded in real metadata.
 
 ## Installation
 
