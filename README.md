@@ -12,11 +12,7 @@ Or search for **datahub-cloud** in the Claude marketplace.
 
 ## Authentication
 
-This plugin connects to DataHub Cloud via the MCP server at `https://mcp.datahub.com/mcp`. You'll need a **Personal Access Token (PAT)**:
-
-1. Go to **DataHub Cloud → Settings → Access Tokens**
-2. Generate a new token and copy it
-3. Set it as an environment variable: `export DATAHUB_TOKEN=your-token-here`
+This plugin connects to DataHub Cloud via the MCP server at `https://mcp.datahub.com/mcp`. Authentication is handled automatically via OAuth — no tokens or environment variables needed.
 
 ## Skills and Commands
 
