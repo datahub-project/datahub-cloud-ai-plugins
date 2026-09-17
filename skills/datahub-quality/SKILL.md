@@ -51,7 +51,6 @@ This skill is designed to work across multiple coding agents (Claude Code, Curso
 
 - `allowed-tools` in the YAML frontmatter above
 
-**Reference file paths:** Shared references are in `../shared-references/` relative to this skill's directory. Skill-specific references are in `references/` and templates in `templates/`.
 
 ---
 
@@ -126,7 +125,7 @@ Determine what the user wants to do:
 - **Assertion inspection** — "what assertions exist on X?" / "show me the latest results"
 - **Incident review** — "what incidents are active?" / "show me details of incident Y"
 
-### Management intents (Cloud only)
+### Management intents (Cloud only) — not available through this plugin
 
 - **Create user-defined checks** — "add a freshness check to X" / "create a volume assertion" / "check that email is not null" / "schema should have these columns"
 - **Create smart assertions (AI)** — "set up anomaly detection" / "monitor X for anomalies" / "infer quality checks" / "watch for drift"
@@ -353,6 +352,18 @@ query {
 
 ## Step 4: Plan Quality Action (Cloud Only)
 
+> **Not available through this plugin.** Everything in this step — creating
+> assertions and monitors, running them, raising or resolving incidents, and
+> managing subscriptions — is a GraphQL mutation. The DataHub MCP endpoint
+> exposes no tool for any of it.
+>
+> When a user asks for one of these, say plainly that it is not available here
+> and point them at the DataHub UI or the `datahub` CLI. Do not construct a
+> mutation, do not describe one as though you ran it, and never imply a check was
+> created. The rest of this section is retained so you can explain accurately
+> *what* they would be setting up and where.
+
+
 For write operations, present what will be created or changed before executing. There are two distinct paths for creating assertions:
 
 ### Path A: User-Defined Checks
@@ -484,12 +495,10 @@ Proceed? (yes/no)
 
 Use `datahub graphql --query '...' --format json`. See the reference docs for full mutation signatures and examples:
 
-- **Assertions:** `references/assertion-mutations-reference.md` — covers all 6 assertion types (freshness, volume, SQL, field, schema, custom), standalone vs. monitor vs. smart, running, reporting results, and deleting
-- **Incidents & Subscriptions:** `references/incident-subscription-reference.md` — covers raising/resolving/updating incidents, creating/updating/deleting subscriptions, notification channel configuration, and querying
 
 ### GraphQL best practices
 
-1. **Only use documented fields and mutations.** Do not guess or invent GraphQL field names from training data — they are often wrong. The CLI has built-in introspection commands to verify the live schema (see `../shared-references/datahub-cli-reference.md` → "GraphQL Discovery"):
+1. **Only use documented fields and mutations.** Do not guess or invent GraphQL field names from training data — they are often wrong. Note that this plugin cannot execute them at all (see above), so the correct response is to say the operation is unavailable rather than to construct a mutation:
 
    ```bash
    datahub graphql --describe dataProduct --recurse --format json   # show fields on a type
@@ -665,22 +674,11 @@ datahub -C skill=datahub-quality graphql --query 'mutation {
 
 After executing, confirm the change took effect:
 
-- **Assertions:** Re-query the dataset's `assertions` field to confirm the new assertion appears
 - **Incidents:** Re-query `incidents(state: ACTIVE)` to confirm the incident was raised/resolved
 - **Subscriptions:** Run `listSubscriptions` to confirm the subscription was created
 
 ---
 
-## Reference Documents
-
-| Document                          | Path                                            | Purpose                                                                    |
-| --------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------- |
-| Assertion mutations reference     | `references/assertion-mutations-reference.md`   | All assertion types, standalone/monitor/smart patterns, running, reporting |
-| Incident & subscription reference | `references/incident-subscription-reference.md` | Incident CRUD, subscription CRUD, notification channels                    |
-| Quality report template           | `templates/quality-report.template.md`          | Quality status report format                                               |
-| CLI reference (shared)            | `../shared-references/datahub-cli-reference.md` | CLI syntax                                                                 |
-
----
 
 ## Common Mistakes
 

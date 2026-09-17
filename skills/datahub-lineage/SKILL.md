@@ -45,7 +45,6 @@ This skill is designed to work across multiple coding agents (Claude Code, Curso
 
 - `allowed-tools` in the YAML frontmatter above
 
-**Reference file paths:** Shared references are in `../shared-references/` relative to this skill's directory. Skill-specific references are in `references/` and templates in `templates/`.
 
 ---
 
@@ -209,7 +208,7 @@ For larger or more complex lineage:
 
 ### Impact analysis format
 
-For impact analysis, group by entity type, identify critical paths (single-dependency chains), and list affected owners. See `templates/impact-analysis.template.md` for the full template.
+For impact analysis, group by entity type, identify critical paths (single-dependency chains), and list affected owners.
 
 ### Cross-platform view
 
@@ -232,16 +231,6 @@ After presenting lineage:
 
 ---
 
-## Reference Documents
-
-| Document                   | Path                                            | Purpose                           |
-| -------------------------- | ----------------------------------------------- | --------------------------------- |
-| Lineage patterns reference | `references/lineage-patterns-reference.md`      | Traversal strategies and patterns |
-| Impact analysis template   | `templates/impact-analysis.template.md`         | Impact analysis report template   |
-| Lineage map template       | `templates/lineage-map.template.md`             | Lineage visualization template    |
-| CLI reference (shared)     | `../shared-references/datahub-cli-reference.md` | CLI commands                      |
-
----
 
 ## Common Mistakes
 

@@ -50,7 +50,6 @@ This skill is designed to work across multiple coding agents (Claude Code, Curso
 
 - `allowed-tools` in the YAML frontmatter above
 
-**Reference file paths:** Shared references are in `../shared-references/` relative to this skill's directory. Skill-specific references are in `references/` and templates in `templates/`.
 
 ---
 
@@ -216,7 +215,7 @@ The filter field is always `structuredProperties.<qualifiedName>` and requires a
 | **Search**         | `search(query=..., filter=...)`               | `datahub search "..." --where "..."`                                     |
 | **Get entity**     | `get_entities(urns=[...])`                    | `datahub get --urn "..."`                                                |
 
-MCP tool names vary by server (e.g., `mcp__datahub__search`). Match by function suffix — MCP tools are self-documenting, so check their schemas for parameter details. See `../shared-references/datahub-cli-reference.md` for CLI syntax.
+MCP tool names are prefixed by the server (e.g. `mcp__datahub__search`). Match by function suffix, and read each tool's schema for its parameters — MCP tools are self-documenting, which is the authority here.
 
 ### Using DataHub CLI
 
@@ -393,15 +392,6 @@ When showing a single entity:
 
 ---
 
-## Reference Documents
-
-| Document                | Path                                            | Purpose                              |
-| ----------------------- | ----------------------------------------------- | ------------------------------------ |
-| Entity type reference   | `references/entity-type-reference.md`           | Entity types, URN formats, platforms |
-| Search filter reference | `references/search-filter-reference.md`         | Filters, facets, search syntax       |
-| CLI reference (shared)  | `../shared-references/datahub-cli-reference.md` | CLI command syntax                   |
-
----
 
 ## Common Mistakes
 
