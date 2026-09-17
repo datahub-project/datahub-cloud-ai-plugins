@@ -1,55 +1,359 @@
 ---
 name: datahub-search
-description: Search and explore the DataHub Cloud data catalog — find datasets, dashboards, pipelines, columns, owners, tags, domains, and any metadata. Use when the user wants to find, discover, or look up anything in their data catalog.
-version: "1.0.0"
 argument-hint: "[what to find, or a question about your data]"
+description: |
+user-invocable: true
 ---
 
-# DataHub Search Skill
+# DataHub Search
 
-Help users find and explore their data catalog using DataHub MCP tools.
+## This plugin is MCP-only
 
-## When to use this skill
-- "Find datasets about orders"
-- "Who owns the revenue table?"
-- "What's in the Finance domain?"
-- "Show me Snowflake tables tagged PII"
-- "What columns does the customer table have?"
+There is no DataHub CLI here. This plugin declares one MCP server and nothing
+else, so wherever this skill shows a `datahub ...` command, use the MCP tool with
+the same function instead:
 
-## When NOT to use this skill
-- Lineage questions ("what feeds into X?") → use `datahub-cloud:datahub-lineage`
-- Data quality questions ("is this table healthy?") → use `datahub-cloud:datahub-quality`
-- SQL help → use `datahub-cloud:datahub-sql-workflow`
+| CLI shown below | MCP tool |
+| --- | --- |
+| `datahub search` | `search` |
+| `datahub get` | `get_entities` |
+| `datahub lineage` | `get_lineage`, or `get_lineage_paths_between` for a path |
+| `datahub graphql` | no equivalent — the operation is unavailable, say so |
+| `datahub check` | `get_me` |
 
-## Workflow
+Tool names are prefixed by the server (`mcp__datahub__search`). MCP tools are
+self-documenting, so read their schemas for parameter names rather than mapping
+CLI flags across literally. Where a section describes a CLI-only capability with
+no MCP tool, treat that capability as unavailable rather than improvising.
 
-1. **Understand the request** — identify what the user is looking for: an entity name, an owner, a tag, a domain, a platform, or a concept
-2. **Search** — use MCP search tools with the most relevant filters
-3. **Fetch details** — for top results, retrieve schema, ownership, tags, glossary terms, and descriptions
-4. **Present clearly** — summarize results in plain language; include entity names, platforms, and links when available
+You are an expert DataHub catalog navigator and metadata analyst. Your role is to help the user discover entities in their catalog and answer questions about their data by querying DataHub.
 
-## MCP tools to use
-- `search` — find entities by keyword, type, platform, owner, tag, domain
-- `get_entities` — fetch full details (schema, ownership, tags, glossary terms, descriptions) for a known URN
-- `list_schema_fields` — list columns for a dataset
-- `search_documents` — search curated documentation and business context
-- `grep_documents` — search document content for specific terms
+This skill operates in two modes:
 
-## Filter values
+- **Discovery mode:** Find, browse, and list entities ("find revenue tables in Snowflake")
+- **Question mode:** Answer analytical questions by querying and reasoning over metadata ("who owns the revenue pipeline?")
 
-`tag`, `domain`, `glossary_term`, `owner` and `container` filters take **full
-URNs**, not display names — `urn:li:tag:PII`, not `pii`. A display name returns
-zero results silently rather than erroring, which reads as "nothing is tagged"
-when it means "wrong filter". Resolve the name to a URN first by searching for
-the tag or domain entity itself.
+---
 
-`entity_type`, `entity_subtype`, `platform`, `env` and `status` take plain
-values (`dataset`, `snowflake`, `PROD`).
+## Multi-Agent Compatibility
 
-## Rules
-- Use DataHub MCP tools exclusively — do not use the DataHub CLI
-- Always include the entity URN in responses so users can navigate directly
-- When the query is ambiguous, ask one clarifying question before searching
-- Never fabricate entity names, owners, or URNs — only report what the MCP tools return
-- If no results are found, say so clearly and suggest broadening the search
-- Limit results to the most relevant 5–10; offer to show more if asked
+This skill is designed to work across multiple coding agents (Claude Code, Cursor, Codex, Copilot, Gemini CLI, Windsurf, and others).
+
+**What works everywhere:**
+
+- The full search and question-answering workflow
+- Both discovery and question modes
+- Search, browse, and entity retrieval via MCP tools or DataHub CLI
+- Result formatting and answer synthesis
+
+**Claude Code-specific features** (other agents can safely ignore these):
+
+- `allowed-tools` in the YAML frontmatter above
+
+
+---
+
+## Not This Skill
+
+| If the user wants to...                                        | Use this instead   |
+| -------------------------------------------------------------- | ------------------ |
+| Explore lineage, upstream/downstream, impact analysis          | `datahub-cloud:datahub-lineage` |
+| Create assertions, run quality checks, raise/resolve incidents | `datahub-cloud:datahub-quality` |
+| Install CLI, authenticate, configure defaults                  | `datahub-cloud:datahub-setup`   |
+
+**Key boundary:** Search answers **ad-hoc questions** ("who owns X?"). Systematic coverage reporting ("what percentage of tables lack owners?") is not a capability this plugin ships — say so rather than approximating one from a capped search.
+
+---
+
+## Step 1: Classify Intent
+
+Determine whether the user wants to **discover** (find things) or **ask a question** (get an answer).
+
+### Discovery intents
+
+| Intent             | Examples                                                             | Primary Operation                       |
+| ------------------ | -------------------------------------------------------------------- | --------------------------------------- |
+| Keyword search     | "find revenue tables", "search for customer data"                    | `search` with query                     |
+| Browse hierarchy   | "show me Snowflake databases", "browse production"                   | `browse` by path                        |
+| Filter by metadata | "datasets tagged PII", "tables owned by data-eng"                    | `search` with filters                   |
+| Column name search | "tables with a customer_id column", "find datasets containing email" | `search` with `fieldPaths` query prefix |
+| Entity lookup      | "get details for urn:li:dataset:..."                                 | `get` by URN                            |
+
+### Question intents
+
+| Category              | Examples                                               | Query Strategy                                                                              |
+| --------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| Ownership             | "Who owns X?", "What does team Y own?"                 | Search + get `ownership` aspect                                                             |
+| Governance            | "What has PII tags?", "What's in the Finance domain?"  | Search with tag/domain/term filters                                                         |
+| Coverage              | "What's undocumented?", "How many tables lack owners?" | Search + check aspects for completeness                                                     |
+| Structured properties | "What's Tier 1?", "Filter by data classification"      | Resolve property ID → check allowed values → search with `structuredProperties.<id>` filter |
+| Topology              | "How many datasets per platform?"                      | Broad search + aggregate                                                                    |
+| Schema                | "What columns does X have?", "Where is column Y used?" | Get `schemaMetadata` aspect                                                                 |
+| Relationship          | "What dashboards use this table?"                      | Lineage + relationship traversal                                                            |
+| Popularity            | "Most queried datasets?", "Top used tables?"           | Sort by usage **(Cloud only)**                                                              |
+
+### Popularity intents → check server type
+
+If the user asks about most popular, most queried, most used, or top datasets by usage:
+
+1. Run `datahub check server-config` and check `serverEnv`
+2. If `serverEnv: 'cloud'` → use `--sort-by queryCountLast30DaysFeature --sort-order desc` (see CLI reference for all sort fields)
+3. If not cloud → respond: "Popularity-based sorting requires DataHub Cloud. The open-source version doesn't index usage statistics for sorting. Consider upgrading to DataHub Cloud for usage-based search."
+
+Do not attempt the sort on a non-cloud instance — it will fail with a search error.
+
+**Sort order:** The default sort order is **ascending**. Always pass `--sort-order desc` explicitly when sorting by popularity, recency, size, or any metric where higher values should come first.
+
+### Lineage intents → redirect
+
+If the user wants lineage exploration ("what feeds into X", "what depends on X", "show lineage"), suggest using `datahub-cloud:datahub-lineage` for the dedicated lineage skill. For simple one-hop lineage as part of a question, handle inline.
+
+### Clarifying questions when needed
+
+- **Scope:** Which platform(s)? Which environment?
+- **Entity type:** Datasets only, or also dashboards/charts/pipelines?
+- **Depth:** Surface-level list, or detailed metadata?
+- **Precision:** Exact match, or anything related?
+
+---
+
+## Step 2: Translate to DataHub Operations
+
+### CLI filter syntax quick-reference
+
+```
+# Filters are parameters on the tool, not shell flags. Read its schema for names.
+search(query="customers", filter={"platform": "snowflake", "entity_type": "dataset"})
+search(query="*", filter={"tag": "urn:li:tag:PII"})        # governance filters take URNs
+get_entities(urns=["<URN>"])                                # full detail, batched
+```
+
+**Note:** There is no `--entity` flag. Use `--filter entity_type=dataset` or `--where "entity_type = dataset"`.
+
+### For discovery
+
+| User says                                     | Query     | Filters                                  | Entity Type |
+| --------------------------------------------- | --------- | ---------------------------------------- | ----------- |
+| "find revenue tables"                         | `revenue` | —                                        | `dataset`   |
+| "Snowflake datasets tagged PII"               | `*`       | `platform=snowflake`, `tag=urn:li:tag:PII`         | `dataset`   |
+| "dashboards owned by jdoe"                    | `*`       | `owner=urn:li:corpuser:jdoe`                            | `dashboard` |
+| "production BigQuery tables"                  | `*`       | `platform=bigquery`, `env=PROD`          | `dataset`   |
+| "tables with a customer_id column"            | `*`       | `fieldPaths=customer_id`                 | `dataset`   |
+| "Snowflake tables containing an email column" | `*`       | `platform=snowflake`, `fieldPaths=email` | `dataset`   |
+
+### For questions
+
+| Question Pattern                               | Operations                                                                                                                                                                                  |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Who owns X?"                                  | 1. Search for X → 2. Get `ownership` aspect                                                                                                                                                 |
+| "What tables have PII tags?"                   | 1. Search with `tag=urn:li:tag:PII` filter, entity=dataset                                                                                                                                            |
+| "How many datasets lack descriptions?"         | 1. Search with `--where "entity_type = dataset AND description IS NULL AND editableDescription IS NULL"` → 2. Project siblings to check effective coverage (see Step 3: Resolving siblings) |
+| "What does team X own?"                        | 1. Search with `owner=urn:li:corpgroup:team-x` filter                                                                                                                                                       |
+| "What columns does X have?"                    | 1. Search for X → 2. Get `schemaMetadata` aspect                                                                                                                                            |
+| "Which tables contain a `customer_id` column?" | 1. Search `*` with `--where "entity_type = dataset AND fieldPaths = customer_id"`                                                                                                           |
+| "What's in the Finance domain?"                | 1. Search with `domain=urn:li:domain:finance` filter                                                                                                                                                      |
+
+### Structured property filters (special case)
+
+Structured properties are custom metadata fields with admin-defined schemas. Filtering by them requires a two-step lookup — you cannot guess the filter field name.
+
+**Step 1 — Resolve the property ID:**
+
+```
+# Filters are parameters on the tool, not shell flags. Read its schema for names.
+search(query="customers", filter={"platform": "snowflake", "entity_type": "dataset"})
+search(query="*", filter={"tag": "urn:li:tag:PII"})        # governance filters take URNs
+get_entities(urns=["<URN>"])                                # full detail, batched
+```
+
+This returns the property's qualified name (e.g., `io.acryl.dataTier`), which becomes the filter field.
+
+**Step 2 — Check for allowed values (if applicable):**
+
+Some structured properties restrict values to an enumeration. Fetch the definition to see them:
+
+```
+# Filters are parameters on the tool, not shell flags. Read its schema for names.
+search(query="customers", filter={"platform": "snowflake", "entity_type": "dataset"})
+search(query="*", filter={"tag": "urn:li:tag:PII"})        # governance filters take URNs
+get_entities(urns=["<URN>"])                                # full detail, batched
+```
+
+If `allowedValues` is present, the filter value must exactly match one of the listed options.
+
+**Step 3 — Search with the structured property filter:**
+
+```
+# Filters are parameters on the tool, not shell flags. Read its schema for names.
+search(query="customers", filter={"platform": "snowflake", "entity_type": "dataset"})
+search(query="*", filter={"tag": "urn:li:tag:PII"})        # governance filters take URNs
+get_entities(urns=["<URN>"])                                # full detail, batched
+```
+
+The filter field is always `structuredProperties.<qualifiedName>` and requires an exact value match.
+
+| User says                                     | Steps                                                                                                                        |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| "find Tier 1 datasets"                        | 1. Search `entity_type=structuredProperty` for "tier" → 2. Get allowed values → 3. Filter `structuredProperties.<id>=Tier 1` |
+| "what structured properties exist?"           | Search `entity_type=structuredProperty` → list results                                                                       |
+| "filter datasets by `<property>` = `<value>`" | 1. Resolve property ID → 2. Validate value against allowed values if present → 3. Filter                                     |
+
+### Optimization rules
+
+- **Single search suffices** for filtered lookups (ownership, governance, topology).
+- **Search + get** for questions needing aspect details (schema, coverage).
+- **Multi-step with aggregation** for "how many" questions — cap at 100 entities.
+
+---
+
+## Step 3: Execute
+
+### Executing with MCP tools
+
+| Operation | Tool |
+| --- | --- |
+| Keyword or filtered search | `search` |
+| Full detail for known URNs | `get_entities` — batch them in one call |
+| Columns for a dataset | `list_schema_fields` |
+| Curated documents | `search_documents`, then `grep_documents` to read within one |
+
+Tool names are prefixed by the server (`mcp__datahub__search`). Read each tool's
+schema for its parameters rather than guessing — MCP tools are self-documenting,
+and that schema is the authority.
+
+There is no projection or field-selection step. The CLI needs one because its
+default payload is enormous; the MCP tools return structured results already
+scoped, so ask for what you need and read the response.
+
+**Editable vs. ingested metadata.** A description or tag can live in either the
+ingestion-provided fields or the user-edited ones, and **either counts**. When
+answering "does this table have a description?" or "which columns are tagged
+PII?", check both before concluding something is missing — this is the most
+common way a coverage answer comes out wrong.
+
+### Resolving siblings
+
+DataHub often has **multiple entities representing the same logical dataset** — most commonly a dbt model and its corresponding warehouse table (Snowflake, BigQuery, Redshift, Databricks, Postgres). These are linked via the `siblings` aspect. The dbt entity typically holds descriptions and column docs; the warehouse entity has schema details, usage stats, and query lineage. The DataHub UI merges these automatically, but CLI and MCP queries return them separately.
+
+**Always check siblings when you find a dataset.** Metadata may be sparse on the entity the user asked about but complete on its sibling. Include sibling data in your response and note the relationship — e.g., "This Snowflake table is linked to dbt model `stg_orders`, which provides the documentation."
+
+**How to resolve:**
+
+```
+# Filters are parameters on the tool, not shell flags. Read its schema for names.
+search(query="customers", filter={"platform": "snowflake", "entity_type": "dataset"})
+search(query="*", filter={"tag": "urn:li:tag:PII"})        # governance filters take URNs
+get_entities(urns=["<URN>"])                                # full detail, batched
+```
+
+The `isPrimary` field indicates the authoritative source (typically dbt). If `isPrimary` is `false` on the entity you found, the sibling is the canonical source — check its metadata too.
+
+### Pagination
+
+Default to 10 results per page (max 50 per API call). Show total count and offer to fetch the next page. Confirm with the user before fetching more than 100 total results.
+
+### When evidence is incomplete
+
+Note what was found and what's missing. Never fabricate metadata that wasn't returned by DataHub.
+
+---
+
+## Step 4: Present Results
+
+### Discovery mode — Entity list
+
+```markdown
+| #   | Name                      | Type      | Platform  | Domain  | Owner     |
+| --- | ------------------------- | --------- | --------- | ------- | --------- |
+| 1   | mydb.schema.revenue_daily | dataset   | Snowflake | Finance | @jdoe     |
+| 2   | Revenue Dashboard         | dashboard | Looker    | Finance | @analyst1 |
+```
+
+Always include human-readable names (not raw URNs), but provide URNs for drill-down.
+
+### Discovery mode — Entity detail
+
+When showing a single entity:
+
+```markdown
+## <Entity Name>
+
+| Property    | Value                           |
+| ----------- | ------------------------------- |
+| URN         | `urn:li:dataset:(...)`          |
+| Type        | dataset (table)                 |
+| Platform    | Snowflake                       |
+| Owner       | @jdoe (Technical Owner)         |
+| Tags        | `pii`, `revenue`                |
+| Description | Daily revenue aggregation table |
+
+### Schema (top fields)
+
+| Field  | Type    | Description    |
+| ------ | ------- | -------------- |
+| date   | DATE    | Revenue date   |
+| amount | DECIMAL | Revenue amount |
+```
+
+### Question mode — Answer
+
+```markdown
+## Answer
+
+<!-- Direct answer in 1-3 sentences -->
+
+## Evidence
+
+| Entity | Detail              | Source         |
+| ------ | ------------------- | -------------- |
+| <name> | <relevant metadata> | <query/aspect> |
+
+## Methodology
+
+**Queries executed:** <count>
+**Scope:** <what was searched>
+**Limitations:** <gaps, caveats>
+```
+
+### Answer quality rules
+
+1. **Answer directly first.** Lead with the answer, not the methodology.
+2. **Cite specific entities.** Don't say "several tables" — name them.
+3. **Acknowledge incompleteness.** Note the scope you covered.
+4. **Quantify.** "12 of 45 datasets" not "some datasets".
+5. **Distinguish facts from inferences.**
+
+### Suggesting next steps
+
+- "Want to see the schema for any of these?"
+
+---
+
+
+## Common Mistakes
+
+- **Fetching all entities without pagination.** Always use `--limit` (max 50 per page). "Find all tables" means "search and paginate", not "fetch everything".
+- **Answering questions with raw search results.** In question mode, synthesize an answer first ("The revenue_daily table is owned by @jdoe"), then show evidence. Don't just dump an entity list.
+- **Searching by keyword when a URN is provided.** If the user input looks like a URN (`urn:li:*`), use `get` directly — don't pass it as a search query.
+- **Ignoring field-level search.** For "tables with a customer_id column", use `--where "fieldPaths = customer_id"` (or the query prefix `fieldPaths:customer_id`) — not a plain keyword search for "customer_id".
+- **Mixing up discovery and question modes.** "Find revenue tables" (discovery → list them) is different from "Who owns the revenue tables?" (question → answer it).
+- **Guessing structured property filter fields.** Don't fabricate `structuredProperties.X` filters — always resolve the property's qualified name first by searching `entity_type=structuredProperty`, and check `allowedValues` before filtering.
+- **Not using `--projection`.** Default search JSON is very large (facets, nested metadata). Always use `--projection` to return only needed fields. Include `... on <Type>` fragments for each entity type you expect in results, or use `--urns-only` when piping to `datahub get`.
+- **Ignoring siblings.** A Snowflake table with no description may have a dbt sibling that holds the docs. Always check the `siblings` aspect when metadata looks sparse — the user expects the merged view they see in the DataHub UI.
+
+## Red Flags
+
+- **User input contains shell metacharacters** (`` ` ``, `$`, `|`, `;`, `&`) → reject immediately, do not pass to CLI.
+- **Search returns 0 results** → suggest broadening filters or checking spelling before giving up.
+- **Query would fetch >100 entities** → stop and confirm with user before proceeding.
+- **User asks about lineage** ("what feeds into", "what depends on", "upstream", "downstream") → redirect to `datahub-cloud:datahub-lineage`.
+
+---
+
+## Remember
+
+- **Classify first.** Discovery and question intents need different approaches.
+- **Show human-readable names**, not raw URNs. But provide URNs for drill-down.
+- **Check siblings.** Metadata may live on a dbt sibling rather than the warehouse entity.
+- **Project both editable and non-editable fields** when checking metadata coverage.
+- **Be honest about gaps.** If DataHub doesn't have the data, say so.
