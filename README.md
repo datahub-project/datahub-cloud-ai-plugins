@@ -49,31 +49,40 @@ pre-shared client ID. A `401` before you sign in is expected, not a fault.
 permissions follow the account you sign in as, governed by DataHub — this plugin
 sets no client-side capability flag.
 
-## Skills and commands
+## Skills
 
-| Skill | Command | Description |
-|---|---|---|
-| `datahub-search` | `/catalog-search` | Find datasets, dashboards, owners, tags and domains |
-| `datahub-lineage` | `/catalog-lineage` | Trace upstream/downstream flow and assess blast radius |
-| `datahub-quality` | `/catalog-quality` | Check assertions, freshness, volume and health |
-| `datahub-sql-workflow` | `/catalog-sql` | Write SQL grounded in verified catalog metadata |
-| `datahub-setup` | `/catalog-setup` | Verify and troubleshoot the connection |
+| Skill | Description |
+|---|---|
+| `datahub-search` | Find datasets, dashboards, owners, tags and domains |
+| `datahub-lineage` | Trace upstream/downstream flow and assess blast radius |
+| `datahub-quality` | Check assertions, freshness, volume and health |
+| `datahub-sql-workflow` | Write SQL grounded in verified catalog metadata |
+| `datahub-setup` | Verify and troubleshoot the connection |
 
 These are the public base template skills — deliberately basic, and equivalent to
 what is already published in
 [datahub-project/datahub-skills](https://github.com/datahub-project/datahub-skills).
-Skills are model-invoked, so natural language reaches them without a command; the
-commands are thin named entry points that delegate to the same skill.
+
+Skills are both model-invoked and user-invocable, so natural language reaches
+them and so does an explicit call:
 
 ```
-/catalog-search Find all Snowflake tables tagged PII in the Finance domain
-/catalog-lineage What does the orders table feed into downstream?
-/catalog-quality Show failing data quality checks for the revenue dataset
-/catalog-sql Write a query for monthly active users by region
-/catalog-setup Test my DataHub Cloud connection
+/datahub-cloud:datahub-search Find all Snowflake tables tagged PII in the Finance domain
+/datahub-cloud:datahub-lineage What does the orders table feed into downstream?
+/datahub-cloud:datahub-quality Show failing data quality checks for the revenue dataset
+/datahub-cloud:datahub-sql-workflow Write a query for monthly active users by region
+/datahub-cloud:datahub-setup Test my DataHub Cloud connection
 ```
 
-Natural language reaches the same skills without a command:
+The `datahub-cloud:` prefix is optional where the name does not collide, so
+`/datahub-search` usually works too.
+
+There is no `commands/` directory. Every skill is user-invocable by default, so a
+command would have been a one-line wrapper over a skill you can already call — and
+commands are not a component type in Agent Plugins 1.0.0, so dropping them means
+all three clients see one identical surface.
+
+Natural language reaches the same skills directly:
 
 > "Who owns the customer_dim table?"
 > "What would break if we deleted the orders dataset?"

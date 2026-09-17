@@ -2,6 +2,7 @@
 name: datahub-lineage
 description: Explore data lineage in DataHub Cloud — trace where data comes from (upstream) and where it flows (downstream), understand pipeline dependencies, and assess the impact of changes. Use when the user asks about data origins, dependencies, or flow.
 version: "1.0.0"
+argument-hint: "[dataset, column, or an impact question]"
 ---
 
 # DataHub Lineage Skill

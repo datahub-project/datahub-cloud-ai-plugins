@@ -2,6 +2,7 @@
 name: datahub-sql-workflow
 description: Write accurate SQL grounded in DataHub Cloud catalog metadata — find the right tables and columns, understand business definitions, and build queries based on verified schema and lineage context. Use when the user wants to write or understand a SQL query.
 version: "1.0.0"
+argument-hint: "[the question the query should answer]"
 ---
 
 # DataHub SQL Workflow Skill
