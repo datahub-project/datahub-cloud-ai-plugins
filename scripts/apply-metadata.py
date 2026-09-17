@@ -103,7 +103,21 @@ def claude_mcp():
     """Claude Code and Codex both read .mcp.json. The `mcpServers` wrapper is
     required — without it the server silently never loads, and `claude plugin
     validate` does not catch it because it only validates the manifest."""
-    return {"mcpServers": {"datahub": {"url": M["mcpServerURL"]}}}
+    return {
+        "mcpServers": {
+            "datahub": {
+                # Every remote-server plugin in both ecosystems sets this:
+                # Claude Code's official gitlab/context7/linear plugins and
+                # Codex's cloudflare/notion/github/figma all use type "http".
+                "type": "http",
+                "url": M["mcpServerURL"],
+                # Codex reads this to resolve OAuth without a discovery round
+                # trip; it is the `resource` the endpoint's protected-resource
+                # metadata advertises. Claude Code ignores the unknown key.
+                "oauth_resource": M["oauthResource"],
+            }
+        }
+    }
 
 
 def agent_mcp():

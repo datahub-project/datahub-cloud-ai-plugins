@@ -1,7 +1,9 @@
 {
   "mcpServers": {
     "datahub": {
-      "url": "https://mcp.datahub.com/mcp"
+      "type": "http",
+      "url": "https://mcp.datahub.com/mcp",
+      "oauth_resource": "https://mcp.datahub.com"
     }
   }
 }

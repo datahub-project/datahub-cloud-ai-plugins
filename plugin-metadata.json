@@ -44,5 +44,6 @@
     "Find the tables that answer this question in DataHub.",
     "Trace what breaks downstream if I change this column.",
     "Write SQL for this, grounded in DataHub catalog context."
-  ]
+  ],
+  "oauthResource": "https://mcp.datahub.com"
 }
