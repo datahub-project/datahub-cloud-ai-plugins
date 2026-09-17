@@ -143,12 +143,9 @@ If the user wants to set up quality monitoring but doesn't know where to begin, 
 2. **Filter to supported platforms** — smart assertions require an executor that can connect to the warehouse. Supported platforms: **Snowflake, BigQuery, Databricks, Redshift**
 3. **Create smart anomaly monitors** for freshness + volume on each table — these require zero threshold configuration and start learning patterns immediately
 
-```bash
-# Step 1: Find the most popular datasets on a supported platform (Cloud only — requires usage indexing)
-datahub -C skill=datahub-quality search "*" \
-  --where "entity_type = dataset AND platform = snowflake" \
-  --sort-by queryCountLast30DaysFeature --sort-order desc \
-  --format json --limit 10
+```
+search(query="<keywords or *>", filter=<platform / entity_type / health>)
+get_entities(urns=["<URN>", ...])   # assertion results, incidents, freshness
 ```
 
 If usage sorting isn't available (OSS), filter by tier-1 tags or a specific domain instead to find the most important tables.
@@ -173,17 +170,9 @@ If the user names a specific asset:
 
 If the user wants to add checks across multiple assets, search first to build the target list:
 
-```bash
-# Find all Snowflake datasets in the Finance domain
-datahub -C skill=datahub-quality search "*" \
-  --where "entity_type = dataset AND platform = snowflake AND domain = urn:li:domain:finance" \
-  --projection "urn type ... on Dataset { properties { name } platform { name } }" \
-  --format json --limit 20
-
-# Find critical datasets (by tag or structured property)
-datahub -C skill=datahub-quality search "*" \
-  --where "entity_type = dataset AND tag = urn:li:tag:tier-1" \
-  --format json --limit 20
+```
+search(query="<keywords or *>", filter=<platform / entity_type / health>)
+get_entities(urns=["<URN>", ...])   # assertion results, incidents, freshness
 ```
 
 Present the candidate list and confirm scope before proceeding to assertion creation. For large result sets, paginate and ask the user to confirm the batch.
@@ -196,42 +185,17 @@ Data products don't have their own `health` field — quality is assessed across
 
 **Step 1: Find the data product and its assets**
 
-```bash
-# Find the data product
-datahub -C skill=datahub-quality search "Loans" --where "entity_type = data_product" --format json --limit 5
-
-# Then find all datasets in that data product
-datahub -C skill=datahub-quality search "*" \
-  --where "entity_type = dataset AND data_product = urn:li:dataProduct:<ID>" \
-  --format json --limit 50
+```
+search(query="<keywords or *>", filter=<platform / entity_type / health>)
+get_entities(urns=["<URN>", ...])   # assertion results, incidents, freshness
 ```
 
 Or via GraphQL (using `entities` field, NOT `assets` — that field does not exist):
 
-```bash
-cat > /tmp/dp-query.graphql << 'EOF'
-query {
-  dataProduct(urn: "urn:li:dataProduct:<ID>") {
-    properties { name }
-    entities(input: { query: "*" }) {
-      total
-      searchResults {
-        entity {
-          urn type
-          ... on Dataset {
-            properties { name }
-            platform { name }
-            health { type status message }
-          }
-        }
-      }
-    }
-  }
-}
-EOF
-datahub -C skill=datahub-quality graphql --query /tmp/dp-query.graphql --format json
-rm /tmp/dp-query.graphql
-```
+> These reads went through GraphQL, for which there is no MCP tool. Get what
+> you can from `search` and `get_entities` — health, assertion results and
+> incidents travel with the entity — and say plainly when a detail is not
+> reachable rather than approximating it.
 
 **Step 2:** For each dataset with health issues, run the entity quality check (Step 3 below) to get full assertion and incident details.
 
@@ -251,80 +215,33 @@ Use search filters to find assets with quality problems across the estate.
 | `hasFailingAssertions`  | Assets with at least one failing assertion |
 | `hasErroringAssertions` | Assets with erroring assertions            |
 
-```bash
-datahub -C skill=datahub-quality search "*" \
-  --where "hasActiveIncidents = true OR hasFailingAssertions = true" \
-  --projection "urn type
-    ... on Dataset { properties { name } platform { name }
-      health { type status message
-        activeIncidentHealthDetails { count latestIncidentTitle }
-        latestAssertionStatusByType { type status total }
-      }
-    }" \
-  --format json --limit 20
+```
+search(query="<keywords or *>", filter=<platform / entity_type / health>)
+get_entities(urns=["<URN>", ...])   # assertion results, incidents, freshness
 ```
 
 Combine with platform or entity type filters to narrow scope:
 
-```bash
-datahub -C skill=datahub-quality search "*" \
-  --where "entity_type = dataset AND platform = snowflake AND hasFailingAssertions = true" \
-  --format json --limit 20
+```
+search(query="<keywords or *>", filter=<platform / entity_type / health>)
+get_entities(urns=["<URN>", ...])   # assertion results, incidents, freshness
 ```
 
 ### Entity quality check
 
 For a specific entity, fetch its full quality picture with health, assertions, and incidents:
 
-```bash
-datahub -C skill=datahub-quality graphql --query '
-query {
-  dataset(urn: "<DATASET_URN>") {
-    properties { name }
-    health { type status message
-      activeIncidentHealthDetails { count latestIncidentTitle }
-      latestAssertionStatusByType { type status total }
-    }
-    assertions(start: 0, count: 50) {
-      total
-      assertions {
-        urn
-        info { type description source { type } }
-        runEvents(limit: 1) {
-          runEvents { status result { type } timestampMillis }
-        }
-      }
-    }
-    incidents(state: ACTIVE, start: 0, count: 20) {
-      total
-      incidents {
-        urn incidentType title priority
-        incidentStatus { state stage message }
-        source { type }
-        created { time actor }
-      }
-    }
-  }
-}' --format json
-```
+> These reads went through GraphQL, for which there is no MCP tool. Get what
+> you can from `search` and `get_entities` — health, assertion results and
+> incidents travel with the entity — and say plainly when a detail is not
+> reachable rather than approximating it.
 
 ### Assertion run history
 
-```bash
-datahub -C skill=datahub-quality graphql --query '
-query {
-  assertion(urn: "<ASSERTION_URN>") {
-    info { type description }
-    runEvents(limit: 10) {
-      total failed succeeded
-      runEvents {
-        timestampMillis status
-        result { type nativeResults { key value } }
-      }
-    }
-  }
-}' --format json
-```
+> These reads went through GraphQL, for which there is no MCP tool. Get what
+> you can from `search` and `get_entities` — health, assertion results and
+> incidents travel with the entity — and say plainly when a detail is not
+> reachable rather than approximating it.
 
 ### Present results
 
@@ -350,335 +267,24 @@ query {
 
 ---
 
-## Step 4: Plan Quality Action (Cloud Only)
-
-> **Not available through this plugin.** Everything in this step — creating
-> assertions and monitors, running them, raising or resolving incidents, and
-> managing subscriptions — is a GraphQL mutation. The DataHub MCP endpoint
-> exposes no tool for any of it.
->
-> When a user asks for one of these, say plainly that it is not available here
-> and point them at the DataHub UI or the `datahub` CLI. Do not construct a
-> mutation, do not describe one as though you ran it, and never imply a check was
-> created. The rest of this section is retained so you can explain accurately
-> *what* they would be setting up and where.
-
-
-For write operations, present what will be created or changed before executing. There are two distinct paths for creating assertions:
-
-### Path A: User-Defined Checks
-
-The user specifies exactly what to check and what thresholds to use. Available check types:
-
-| Type               | Mutation                                                              | What it checks                                                               |
-| ------------------ | --------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| **Freshness**      | `createFreshnessAssertion` / `upsertDatasetFreshnessAssertionMonitor` | Data should update on a schedule (cron, fixed interval, or since last check) |
-| **Volume**         | `createVolumeAssertion` / `upsertDatasetVolumeAssertionMonitor`       | Row count total, row count change, segment counts                            |
-| **Field (column)** | `createFieldAssertion` / `upsertDatasetFieldAssertionMonitor`         | Column-level — nulls, ranges, regex, uniqueness, field metrics               |
-| **Schema**         | `upsertDatasetSchemaAssertionMonitor` (monitor only)                  | Expected columns exist, compatibility mode (exact, superset, subset)         |
-| **SQL**            | `createSqlAssertion` / `upsertDatasetSqlAssertionMonitor`             | Custom SQL metric compared against a threshold                               |
-| **Custom**         | `upsertCustomAssertion` + `reportAssertionResult`                     | External tool results pushed to DataHub (works on OSS too)                   |
-
-**Freshness + Volume + Field** cover 80% of data quality needs. Suggest these first. SQL assertions are powerful but require the user to write and maintain SQL. Schema assertions guard against breaking changes.
-
-**Standalone vs. Monitor:** `create*Assertion` defines the check only — no schedule. `upsertDataset*AssertionMonitor` creates the check AND attaches a cron schedule so it runs automatically. **Always prefer monitors** for Cloud users.
-
-### How checks run: Evaluation Parameters
-
-Monitors need to know **how** to execute the check. This is controlled by `evaluationParameters.sourceType`, which is **required** on freshness, volume, and field monitors. Pick the right source type based on the user's platform and performance needs:
-
-| Assertion type | Source type options                                                                                                                                                             | Default recommendation                                                                              |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| **Freshness**  | `INFORMATION_SCHEMA` (system metadata), `FIELD_VALUE` (timestamp column), `AUDIT_LOG` (audit API), `FILE_METADATA` (filesystem), `DATAHUB_OPERATION` (DataHub operation aspect) | `INFORMATION_SCHEMA` for warehouses; `FIELD_VALUE` when the user has a reliable `updated_at` column |
-| **Volume**     | `INFORMATION_SCHEMA` (fast, approximate), `QUERY` (exact `COUNT(*)`, slower), `DATAHUB_DATASET_PROFILE` (profile aspect)                                                        | `QUERY` for accuracy; `INFORMATION_SCHEMA` if speed matters                                         |
-| **Field**      | `ALL_ROWS_QUERY` (full scan), `CHANGED_ROWS_QUERY` (incremental, requires `changedRowsField`), `DATAHUB_DATASET_PROFILE` (profile, metrics only)                                | `ALL_ROWS_QUERY` for most cases; `DATAHUB_DATASET_PROFILE` if profiles are already collected        |
-| **SQL**        | N/A — runs the user's SQL directly against the warehouse                                                                                                                        | —                                                                                                   |
-| **Schema**     | Optional — only `DATAHUB_SCHEMA` (uses DataHub's schema metadata)                                                                                                               | Omit — defaults to checking DataHub metadata                                                        |
-
-For freshness with `FIELD_VALUE`, the user must also specify which timestamp column to check:
-
-```graphql
-evaluationParameters: {
-  sourceType: FIELD_VALUE
-  field: { path: "updated_at", type: "TIMESTAMP", nativeType: "TIMESTAMP_NTZ" }
-}
-```
-
-**Ask the user** what source type makes sense if it's not obvious. For most data warehouses (Snowflake, BigQuery, Redshift), `INFORMATION_SCHEMA` (freshness) and `QUERY` (volume) are good defaults.
-
-### Path B: Smart Assertions (AI Anomaly Checks)
-
-Smart assertions use historical data patterns to **automatically infer thresholds** — no manual configuration needed. Pass `inferWithAI: true` on the monitor upsert input.
-
-| Check type                 | Monitor mutation                         | What AI infers                                                     |
-| -------------------------- | ---------------------------------------- | ------------------------------------------------------------------ |
-| **Freshness**              | `upsertDatasetFreshnessAssertionMonitor` | Normal update cadence from historical patterns                     |
-| **Volume**                 | `upsertDatasetVolumeAssertionMonitor`    | Expected row count range from historical trends                    |
-| **Column (field metrics)** | `upsertDatasetFieldAssertionMonitor`     | Normal metric ranges (null %, unique %, etc.) from historical data |
-
-Smart assertions are **only available as monitors** (they need a schedule to collect training data). They go through a `TRAINING` phase before evaluation begins — set expectations with the user that results may take time to stabilize.
-
-**Supported platforms:** Smart assertions require an executor that connects to the data warehouse. Confirm the dataset is on a supported platform: **Snowflake**, **BigQuery**, **Databricks**, or **Redshift**. If the platform is unsupported, fall back to user-defined checks or `upsertCustomAssertion` with external tooling.
-
-**When to suggest smart vs. user-defined:**
-
-- User says "set up quality monitoring" or "watch for anomalies" without specifying thresholds → **Smart**
-- User says "row count should be above 1000" or "table must update daily" → **User-defined**
-- User wants to start monitoring quickly with minimal configuration → **Smart**
-- User needs precise thresholds or custom SQL logic → **User-defined**
-
-### Assertion actions (self-healing loops)
-
-Both user-defined and smart assertions support automated incident management:
-
-```graphql
-actions: {
-  onFailure: [{ type: RAISE_INCIDENT }]
-  onSuccess: [{ type: RESOLVE_INCIDENT }]
-}
-```
-
-Include `actions` in any `create*Assertion` or `upsertDataset*AssertionMonitor` input.
-
-### Incident fields
-
-| Field    | Values                                                                           |
-| -------- | -------------------------------------------------------------------------------- |
-| Type     | `FRESHNESS`, `VOLUME`, `FIELD`, `SQL`, `DATA_SCHEMA`, `OPERATIONAL`, `CUSTOM`    |
-| Priority | `CRITICAL` > `HIGH` > `MEDIUM` > `LOW`                                           |
-| Stages   | `TRIAGE` → `INVESTIGATION` → `WORK_IN_PROGRESS` → `FIXED` / `NO_ACTION_REQUIRED` |
-
-### Subscription channels
-
-| Channel             | Config field    | Key parameters                                  |
-| ------------------- | --------------- | ----------------------------------------------- |
-| **Slack**           | `slackSettings` | `userHandle` (DM) or `channels` (channel names) |
-| **Email**           | `emailSettings` | `email` address                                 |
-| **Microsoft Teams** | `teamsSettings` | `user` or `channels`                            |
-
-Quality-relevant change types: `ASSERTION_PASSED`, `ASSERTION_FAILED`, `ASSERTION_ERROR`, `INCIDENT_RAISED`, `INCIDENT_RESOLVED`.
-
-Use `UPSTREAM_ENTITY_CHANGE` (in addition to `ENTITY_CHANGE`) if the user also wants alerts when upstream dependencies have quality issues.
-
-### Present the plan
-
-```markdown
-## Quality Action Plan
-
-**Entity:** <name> (`<URN>`)
-**Operation:** Create freshness assertion monitor
-**Tier:** Cloud
-
-| Parameter  | Value                      |
-| ---------- | -------------------------- |
-| Type       | Freshness (dataset change) |
-| Schedule   | Every 6 hours              |
-| Evaluation | Daily at 9am UTC           |
-| On failure | Raise incident             |
-| On success | Resolve incident           |
-
-Proceed? (yes/no)
-```
-
----
-
-## Step 5: Get User Approval
-
-**Mandatory.** Never skip approval for any write operation — creating assertions, raising incidents, creating subscriptions.
-
-- "Does this look correct? Shall I proceed?"
-- If the user modifies the plan, update and re-present.
-
----
-
-## Step 6: Execute
-
-Use `datahub graphql --query '...' --format json`. See the reference docs for full mutation signatures and examples:
-
-
-### GraphQL best practices
-
-1. **Only use documented fields and mutations.** Do not guess or invent GraphQL field names from training data — they are often wrong. Note that this plugin cannot execute them at all (see above), so the correct response is to say the operation is unavailable rather than to construct a mutation:
-
-   ```bash
-   datahub graphql --describe dataProduct --recurse --format json   # show fields on a type
-   datahub graphql --list-operations --format json                  # list all available operations
-   datahub graphql --list-mutations --format json                   # list mutations only
-   ```
-
-   If you need a field or operation not documented in this skill, **introspect first** using these commands rather than guessing.
-
-2. **If a query fails with `FieldUndefined`**, run `--describe` on the parent type to see what fields actually exist. Do not try a different guessed name.
-3. **Use `--strip-unknown-fields` on read queries** as a safety net — it silently drops unrecognized fields instead of failing. Never use on mutations (removing fields could change behavior).
-4. Use `--variables` with a temp JSON file for any mutation involving dataset URNs (they contain parentheses that break shell escaping).
-5. For long or multi-entity queries, write the query to a temp file and pass the file path to `--query /tmp/query.graphql`. The CLI auto-detects file paths. Long inline strings hit OS filename limits.
-6. **Stop on first error** — report what succeeded, what failed, ask how to proceed.
-7. For bulk operations across multiple entities, report progress and require explicit count confirmation for >20 entities.
-
-### Canonical examples
-
-**User-defined: freshness monitor (check daily, auto-incident):**
-
-```bash
-datahub -C skill=datahub-quality graphql --query 'mutation {
-  upsertDatasetFreshnessAssertionMonitor(input: {
-    entityUrn: "<DATASET_URN>"
-    schedule: { type: FIXED_INTERVAL, fixedInterval: { unit: DAY, multiple: 1 } }
-    evaluationSchedule: { cron: "0 9 * * *", timezone: "UTC" }
-    evaluationParameters: { sourceType: INFORMATION_SCHEMA }
-    mode: ACTIVE
-    actions: { onFailure: [{ type: RAISE_INCIDENT }], onSuccess: [{ type: RESOLVE_INCIDENT }] }
-  }) { urn }
-}' --format json
-```
-
-**User-defined: field (column) assertion — email must not be null:**
-
-```bash
-datahub -C skill=datahub-quality graphql --query 'mutation {
-  createFieldAssertion(input: {
-    entityUrn: "<DATASET_URN>"
-    type: FIELD_VALUES
-    fieldValuesAssertion: {
-      field: { path: "email", type: "STRING", nativeType: "VARCHAR" }
-      operator: NOT_NULL
-      excludeNulls: false
-      failThreshold: { type: COUNT, value: 0 }
-    }
-  }) { urn }
-}' --format json
-```
-
-**Smart assertion: AI-inferred freshness anomaly check:**
-
-```bash
-datahub -C skill=datahub-quality graphql --query 'mutation {
-  upsertDatasetFreshnessAssertionMonitor(input: {
-    entityUrn: "<DATASET_URN>"
-    inferWithAI: true
-    evaluationSchedule: { cron: "0 9 * * *", timezone: "UTC" }
-    evaluationParameters: { sourceType: INFORMATION_SCHEMA }
-    mode: ACTIVE
-  }) { urn }
-}' --format json
-```
-
-**Smart assertion: AI-inferred volume anomaly check:**
-
-```bash
-datahub -C skill=datahub-quality graphql --query 'mutation {
-  upsertDatasetVolumeAssertionMonitor(input: {
-    entityUrn: "<DATASET_URN>"
-    type: ROW_COUNT_TOTAL
-    inferWithAI: true
-    rowCountTotal: { operator: GREATER_THAN, parameters: { value: { value: "0", type: NUMBER } } }
-    evaluationSchedule: { cron: "0 9 * * *", timezone: "UTC" }
-    evaluationParameters: { sourceType: QUERY }
-    mode: ACTIVE
-  }) { urn }
-}' --format json
-```
-
-**Smart assertion: AI-inferred column anomaly check:**
-
-```bash
-datahub -C skill=datahub-quality graphql --query 'mutation {
-  upsertDatasetFieldAssertionMonitor(input: {
-    entityUrn: "<DATASET_URN>"
-    type: FIELD_METRIC
-    inferWithAI: true
-    evaluationSchedule: { cron: "0 9 * * *", timezone: "UTC" }
-    evaluationParameters: { sourceType: ALL_ROWS_QUERY }
-    mode: ACTIVE
-  }) { urn }
-}' --format json
-```
-
-**Run all assertions for an asset (native only — external assertions from dbt, Great Expectations, etc. cannot be run on demand):**
-
-```bash
-datahub -C skill=datahub-quality graphql --query 'mutation {
-  runAssertionsForAsset(urn: "<DATASET_URN>") {
-    passingCount failingCount errorCount
-    results { assertion { urn info { type } } result { type } }
-  }
-}' --format json
-```
-
-**Async mode for long-running checks:** The run APIs have a 30-second timeout. Field/column validation checks on large tables can exceed this. Use `async: true` to return immediately, then poll `assertion.runEvents` for results:
-
-```bash
-# Kick off async
-datahub -C skill=datahub-quality graphql --query 'mutation {
-  runAssertionsForAsset(urn: "<DATASET_URN>", async: true) {
-    passingCount failingCount errorCount
-  }
-}' --format json
-
-# Poll for results (repeat until runEvents appear)
-datahub -C skill=datahub-quality graphql --query 'query {
-  assertion(urn: "<ASSERTION_URN>") {
-    runEvents(limit: 1) {
-      runEvents { timestampMillis status result { type } }
-    }
-  }
-}' --format json
-```
-
-**Raise an incident:**
-
-```bash
-datahub -C skill=datahub-quality graphql --query 'mutation {
-  raiseIncident(input: {
-    type: OPERATIONAL
-    title: "Data pipeline delayed"
-    description: "Nightly ETL has not completed in 6 hours"
-    resourceUrn: "<DATASET_URN>"
-    priority: HIGH
-    status: { state: ACTIVE, stage: TRIAGE }
-  })
-}' --format json
-```
-
-**Resolve an incident:**
-
-```bash
-datahub -C skill=datahub-quality graphql --query 'mutation {
-  updateIncidentStatus(urn: "<INCIDENT_URN>", input: {
-    state: RESOLVED, stage: FIXED, message: "Pipeline backfilled"
-  })
-}' --format json
-```
-
-**Subscribe to assertion failures (Slack):**
-
-```bash
-datahub -C skill=datahub-quality graphql --query 'mutation {
-  createSubscription(input: {
-    entityUrn: "<DATASET_URN>"
-    subscriptionTypes: [ENTITY_CHANGE]
-    entityChangeTypes: [{ entityChangeType: ASSERTION_FAILED }, { entityChangeType: ASSERTION_ERROR }]
-    notificationConfig: {
-      notificationSettings: {
-        sinkTypes: [SLACK]
-        slackSettings: { channels: ["#data-quality-alerts"] }
-      }
-    }
-  }) { subscriptionUrn }
-}' --format json
-```
-
----
-
-## Step 7: Verify
-
-After executing, confirm the change took effect:
-
-- **Incidents:** Re-query `incidents(state: ACTIVE)` to confirm the incident was raised/resolved
-- **Subscriptions:** Run `listSubscriptions` to confirm the subscription was created
-
----
-
+## Creating and changing checks is not available here
+
+Everything beyond diagnosis — creating assertions and monitors, running them on
+demand, raising or resolving incidents, and managing notification subscriptions —
+is a GraphQL mutation. The DataHub MCP endpoint exposes no tool for any of it,
+so this plugin cannot do it.
+
+When a user asks for one of these:
+
+1. Say plainly that it is not available through this plugin.
+2. Point them at the DataHub UI, or the `datahub` CLI if they have it configured
+   separately.
+3. Be specific about *what* they would be setting up, so the handoff is useful —
+   which asset, which kind of check, which threshold.
+
+Never construct a mutation, never describe one as though it ran, and never imply
+a check was created, an incident was resolved, or a subscription exists. Saying
+"I cannot do that here" is the correct and complete answer.
 
 ## Common Mistakes
 

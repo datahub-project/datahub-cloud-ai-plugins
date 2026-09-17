@@ -22,7 +22,19 @@ This plugin connects to DataHub Cloud via the MCP server at `https://mcp.datahub
 ## Verification workflow
 
 1. **Test connectivity** — call `get_me` to confirm the MCP server is reachable and the user is authenticated; this returns the authenticated user's profile
-2. **Smoke test** — run a simple `search` call to confirm catalog access is working end-to-end
+2. **Smoke test** — run a minimal search to confirm catalog access end-to-end:
+
+   ```
+   search(query="*", count=1)
+   ```
+
+   Interpreting the pair matters more than either result alone:
+
+   | `get_me` | `search` | Diagnosis |
+   | --- | --- | --- |
+   | fails | — | Not connected or not authenticated — sign in with `/mcp` |
+   | works | returns results | Working normally |
+   | works | returns nothing | Connected, but the account may lack read access |
 3. **Report status** — clearly state whether the connection is working and, if not, what the specific issue is
 
 ## Troubleshooting

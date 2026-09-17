@@ -121,18 +121,11 @@ If the user wants lineage exploration ("what feeds into X", "what depends on X",
 
 ### CLI filter syntax quick-reference
 
-```bash
-# Simple filters (--filter key=value, multiple = AND)
-datahub search "customers" --filter platform=snowflake --filter entity_type=dataset
-
-# Comma = OR within a filter
-datahub search "*" --filter platform=snowflake,bigquery
-
-# SQL-like WHERE (recommended for complex filters)
-datahub search "*" --where "platform = snowflake AND entity_type = dataset AND env = PROD"
-
-# Common filter keys: platform, entity_type, env, tags, owners, domains, container, fieldPaths
-# Use: datahub search list-filters   to discover all available filter keys
+```
+# Filters are parameters on the tool, not shell flags. Read its schema for names.
+search(query="customers", filter={"platform": "snowflake", "entity_type": "dataset"})
+search(query="*", filter={"tag": "urn:li:tag:PII"})        # governance filters take URNs
+get_entities(urns=["<URN>"])                                # full detail, batched
 ```
 
 **Note:** There is no `--entity` flag. Use `--filter entity_type=dataset` or `--where "entity_type = dataset"`.
@@ -166,9 +159,11 @@ Structured properties are custom metadata fields with admin-defined schemas. Fil
 
 **Step 1 — Resolve the property ID:**
 
-```bash
-# Find the structured property definition
-datahub search "data tier" --where "entity_type = structuredProperty" --format json --limit 5
+```
+# Filters are parameters on the tool, not shell flags. Read its schema for names.
+search(query="customers", filter={"platform": "snowflake", "entity_type": "dataset"})
+search(query="*", filter={"tag": "urn:li:tag:PII"})        # governance filters take URNs
+get_entities(urns=["<URN>"])                                # full detail, batched
 ```
 
 This returns the property's qualified name (e.g., `io.acryl.dataTier`), which becomes the filter field.
@@ -177,16 +172,22 @@ This returns the property's qualified name (e.g., `io.acryl.dataTier`), which be
 
 Some structured properties restrict values to an enumeration. Fetch the definition to see them:
 
-```bash
-datahub get --urn "urn:li:structuredProperty:io.acryl.dataTier"
+```
+# Filters are parameters on the tool, not shell flags. Read its schema for names.
+search(query="customers", filter={"platform": "snowflake", "entity_type": "dataset"})
+search(query="*", filter={"tag": "urn:li:tag:PII"})        # governance filters take URNs
+get_entities(urns=["<URN>"])                                # full detail, batched
 ```
 
 If `allowedValues` is present, the filter value must exactly match one of the listed options.
 
 **Step 3 — Search with the structured property filter:**
 
-```bash
-datahub search "*" --where "entity_type = dataset AND structuredProperties.io.acryl.dataTier = 'Tier 1'"
+```
+# Filters are parameters on the tool, not shell flags. Read its schema for names.
+search(query="customers", filter={"platform": "snowflake", "entity_type": "dataset"})
+search(query="*", filter={"tag": "urn:li:tag:PII"})        # governance filters take URNs
+get_entities(urns=["<URN>"])                                # full detail, batched
 ```
 
 The filter field is always `structuredProperties.<qualifiedName>` and requires an exact value match.
@@ -207,86 +208,28 @@ The filter field is always `structuredProperties.<qualifiedName>` and requires a
 
 ## Step 3: Execute
 
-### Choosing your tool: MCP vs. CLI
+### Executing with MCP tools
 
-|                    | MCP tools                                     | DataHub CLI                                                              |
-| ------------------ | --------------------------------------------- | ------------------------------------------------------------------------ |
-| **When available** | Preferred — structured I/O, no shell overhead | Fallback, or when you need `--projection`, `--dry-run`, advanced filters |
-| **Search**         | `search(query=..., filter=...)`               | `datahub search "..." --where "..."`                                     |
-| **Get entity**     | `get_entities(urns=[...])`                    | `datahub get --urn "..."`                                                |
+| Operation | Tool |
+| --- | --- |
+| Keyword or filtered search | `search` |
+| Full detail for known URNs | `get_entities` — batch them in one call |
+| Columns for a dataset | `list_schema_fields` |
+| Curated documents | `search_documents`, then `grep_documents` to read within one |
 
-MCP tool names are prefixed by the server (e.g. `mcp__datahub__search`). Match by function suffix, and read each tool's schema for its parameters — MCP tools are self-documenting, which is the authority here.
+Tool names are prefixed by the server (`mcp__datahub__search`). Read each tool's
+schema for its parameters rather than guessing — MCP tools are self-documenting,
+and that schema is the authority.
 
-### Using DataHub CLI
+There is no projection or field-selection step. The CLI needs one because its
+default payload is enormous; the MCP tools return structured results already
+scoped, so ask for what you need and read the response.
 
-**Use `--projection` to reduce token cost.** Default search JSON is very large. Use projections to return only the fields you need.
-
-`--projection` accepts **GraphQL selection set syntax**. The CLI builds a GraphQL query under the hood, and `--projection` defines which fields are returned for each search result entity. Use `... on <Type> { fields }` inline fragments to select type-specific fields.
-
-**Discovering valid types and fields:**
-
-- Use `datahub search "X" --dry-run` to preview the generated GraphQL query and see how projections are applied
-- Use `datahub graphql --describe searchAcrossEntities --recurse --format json` to inspect the full return type schema
-  **Common GraphQL types for `... on` fragments:**
-
-| Entity Type | GraphQL Type | Key Fields                                                                                                                                    |
-| ----------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| dataset     | `Dataset`    | `properties { name description }`, `platform { name }`, `ownership`, `schemaMetadata`, `siblings`, `editableProperties`, `subTypes`, `domain` |
-| dashboard   | `Dashboard`  | `properties { name description }`, `platform { name }`, `ownership`                                                                           |
-| chart       | `Chart`      | `properties { name description }`, `platform { name }`                                                                                        |
-| dataFlow    | `DataFlow`   | `properties { name description }`, `platform { name }`                                                                                        |
-| dataJob     | `DataJob`    | `properties { name description }`                                                                                                             |
-| container   | `Container`  | `properties { name description }`, `platform { name }`, `subTypes`                                                                            |
-
-Note: GraphQL field names differ from aspect names — e.g., the `datasetProperties` aspect is `properties` in GraphQL, and `dataPlatform` is `platform`. When in doubt, use `--dry-run` to validate.
-
-**Editable vs. non-editable fields:** Some metadata fields exist in two places — an ingestion-provided version and a user-edited version. Both can hold values. Always project **both** when checking coverage:
-
-| Field               | Ingestion-provided                                                                 | User-edited                                                                                                 |
-| ------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Asset description   | `properties { description }`                                                       | `editableProperties { description }`                                                                        |
-| Column descriptions | `schemaMetadata { fields { fieldPath description } }`                              | `editableSchemaMetadata { editableSchemaFieldInfo { fieldPath description } }`                              |
-| Column tags         | `schemaMetadata { fields { fieldPath globalTags { tags { tag { urn } } } } }`      | `editableSchemaMetadata { editableSchemaFieldInfo { fieldPath globalTags { tags { tag { urn } } } } }`      |
-| Column terms        | `schemaMetadata { fields { fieldPath glossaryTerms { terms { term { urn } } } } }` | `editableSchemaMetadata { editableSchemaFieldInfo { fieldPath glossaryTerms { terms { term { urn } } } } }` |
-
-A value in either version means the metadata exists. When answering "does this table have a description?" or "which columns are tagged PII?", check both.
-
-**Projection examples:**
-
-```bash
-# Minimal: just URNs and types
-datahub search "customers" --projection "urn type"
-
-# Multi-type discovery (name + platform for all common entity types)
-datahub search "revenue" --projection "urn type
-  ... on Dataset { properties { name description } platform { name } }
-  ... on Dashboard { properties { name description } platform { name } }
-  ... on DataFlow { properties { name description } platform { name } }
-  ... on DataJob { properties { name description } }
-  ... on Chart { properties { name description } platform { name } }"
-
-# With ownership (good for "who owns X?" questions)
-datahub search "customers" --projection "urn type
-  ... on Dataset { properties { name } ownership { owners { owner type } } platform { name } }
-  ... on Dashboard { properties { name } ownership { owners { owner type } } platform { name } }"
-```
-
-**Output formats:** Use `--format json` (default) for structured processing, `--table` for human-readable display, `--urns-only` for piping to other commands.
-
-**`search` vs. `get` for single entities:** Prefer `datahub search` with `--projection` even for a single known entity when you need entity-resolved fields available in GraphQL — siblings, ownership, tags, glossary terms, domain, dataset profiles, etc. These fields are returned in a structured, ready-to-use format. Use `datahub get --urn "<URN>" --aspect <aspect>` when you need a single low-level raw aspect (e.g., full `schemaMetadata`) that isn't practical to project. But be careful, working with aspects requires deeper understanding of the DataHub metadata model.
-
-**Input validation:** Before passing user input to CLI commands, reject any input containing shell metacharacters (`` ` ``, `$`, `|`, `;`, `&`, `>`, `<`, `\n`). Only pass sanitized alphanumeric queries and well-formed URNs.
-
-### Delegating to metadata-searcher agent (Claude Code only)
-
-**Only delegate when the query requires multiple complex searches with filtering and aggregation to synthesize a result set** — for example, searching across several platforms, combining results from multiple entity types with different filters, or gathering data that needs to be compiled into a file. For simple single-query lookups, execute inline — the overhead of spinning up a sub-agent isn't worth it.
-
-```
-```
-
-Provide the agent with the specific queries, filters, projections, and result limits.
-
-**Fallback for agents without sub-agent dispatch:** Execute operations inline using MCP tools or CLI.
+**Editable vs. ingested metadata.** A description or tag can live in either the
+ingestion-provided fields or the user-edited ones, and **either counts**. When
+answering "does this table have a description?" or "which columns are tagged
+PII?", check both before concluding something is missing — this is the most
+common way a coverage answer comes out wrong.
 
 ### Resolving siblings
 
@@ -296,17 +239,11 @@ DataHub often has **multiple entities representing the same logical dataset** �
 
 **How to resolve:**
 
-```bash
-# Include siblings in search projection (preferred — no extra queries)
-datahub search "orders" --projection "urn type
-  ... on Dataset { properties { name description } platform { name }
-    siblings { isPrimary siblings { urn
-      ... on Dataset { properties { name description } platform { name } }
-    }}
-  }"
-
-# Fetch siblings for a known entity
-datahub get --urn "<URN>" --aspect siblings
+```
+# Filters are parameters on the tool, not shell flags. Read its schema for names.
+search(query="customers", filter={"platform": "snowflake", "entity_type": "dataset"})
+search(query="*", filter={"tag": "urn:li:tag:PII"})        # governance filters take URNs
+get_entities(urns=["<URN>"])                                # full detail, batched
 ```
 
 The `isPrimary` field indicates the authoritative source (typically dbt). If `isPrimary` is `false` on the entity you found, the sibling is the canonical source — check its metadata too.

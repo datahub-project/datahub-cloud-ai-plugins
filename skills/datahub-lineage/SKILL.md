@@ -113,22 +113,22 @@ MCP provides structured lineage graphs without shell overhead — MCP tools are 
 
 ```bash
 # Upstream sources (full graph by default)
-datahub lineage --urn "<URN>" --direction upstream
+get_lineage(urn="<URN>", direction="upstream")
 
 # Downstream dependents
-datahub lineage --urn "<URN>" --direction downstream
+get_lineage(urn="<URN>", direction="downstream")
 
 # Limit depth
-datahub lineage --urn "<URN>" --direction downstream --hops 1
+get_lineage(urn="<URN>", direction="downstream", hops=1)
 
 # Column-level lineage (datasets only)
-datahub lineage --urn "<URN>" --column customer_id --direction upstream
+get_lineage(urn="<URN>", column="customer_id", direction="upstream")
 
 # JSON output (includes metadata with hints about capped/truncated results)
-datahub lineage --urn "<URN>" --direction downstream --format json
+get_lineage(urn="<URN>", direction="downstream")   # structured already
 
 # Find path between two entities
-datahub lineage path --from "<URN_A>" --to "<URN_B>"
+get_lineage_paths_between(from_urn="<URN_A>", to_urn="<URN_B>")
 ```
 
 The command returns a summary line indicating how many entities were found, the maximum hop depth, and whether results were capped. Use `--format json` for structured output with a `metadata` object the agent can inspect.
@@ -139,40 +139,19 @@ The command returns a summary line indicating how many entities were found, the 
 
 ### What lineage returns vs. what needs follow-up
 
-`datahub lineage` returns basic fields for each entity: **URN, name, type, platform, and hop distance**. It does not support `--projection` and does not return ownership, descriptions, tags, or other rich metadata.
+`get_lineage` returns the basics for each entity — URN, name, type, platform and
+hop distance. It does not return ownership, descriptions or tags.
 
-To enrich lineage results with richer metadata, use search with a `urn` filter to batch multiple URNs in a single call with `--projection`:
+When the user wants richer context, batch the URNs you got back into a single
+`get_entities` call rather than fetching them one at a time:
 
-```bash
-# Batch-enrich lineage results — quote URNs (they contain parentheses and commas)
-datahub search "*" \
-  --where 'urn IN ("urn:li:dataset:(urn:li:dataPlatform:snowflake,db.schema.table1,PROD)", "urn:li:dataset:(urn:li:dataPlatform:snowflake,db.schema.table2,PROD)")' \
-  --projection "urn type
-    ... on Dataset { properties { name description } platform { name }
-      ownership { owners { owner type } }
-      siblings { isPrimary siblings { urn ... on Dataset { properties { name description } platform { name } } } }
-    }"
+```
+get_entities(urns=["<URN_1>", "<URN_2>", "<URN_3>"])
 ```
 
-This avoids N+1 calls — collect the URNs from lineage output and resolve them all in one search. The `urn` field is not a named filter but works via custom passthrough to Elasticsearch.
+Only do this when the user actually asked for the extra detail — the names and
+platforms from `get_lineage` are usually enough to answer a lineage question.
 
-**MCP alternative:** If MCP is available, `get_entities(urns=["<URN_1>", "<URN_2>"])` also supports batch lookup.
-
-### Siblings in lineage results
-
-Lineage may return a dbt model URN when the user is thinking of the warehouse table (or vice versa). These are linked via the `siblings` aspect. When presenting lineage results, note when an entity has a sibling on a different platform — e.g., "dbt model `stg_orders` (sibling: Snowflake `analytics.stg_orders`)". See the entity model reference for sibling resolution details.
-
-### Specific path tracing
-
-Use the CLI command first:
-
-```bash
-datahub lineage path --from "<URN_A>" --to "<URN_B>"
-```
-
-If `path` is unavailable, fall back to manual BFS: get downstream from A incrementing depth, check for B at each hop, and stop after 5 hops.
-
----
 
 ## Step 4: Visualize Lineage
 
