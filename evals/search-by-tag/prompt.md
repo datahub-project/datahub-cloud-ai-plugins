@@ -1,6 +1,6 @@
 ---
 name: search-by-tag
-description: Search for datasets by tag using the datahub-search skill
+description: Search for datasets by tag via the DataHub MCP search tool
 tags: [smoke, search]
 runs: 3
 max_turns: 5

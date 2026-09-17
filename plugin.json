@@ -1,7 +1,6 @@
 {
-  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "datahub-cloud",
-  "displayName": "DataHub Cloud",
   "version": "1.0.0",
   "description": "DataHub Cloud plugin \u2014 search the catalog, trace lineage, check data quality, and write SQL grounded in real metadata via the DataHub Cloud MCP server.",
   "author": {
@@ -21,16 +20,5 @@
     "text-to-sql",
     "mcp",
     "data-engineering"
-  ],
-  "metadata": {
-    "icon": "./assets/logo-square.svg",
-    "iconWide": "./assets/logo.svg",
-    "tagline": "Connect AI agents to enterprise data & context",
-    "documentationURL": "https://docs.datahub.com/docs/features/feature-guides/mcp",
-    "privacyPolicyURL": "https://datahub.com/privacy-policy/",
-    "termsOfServiceURL": "https://datahub.com/terms-of-service/",
-    "dataProcessingAgreementURL": "https://datahub.com/dpa/",
-    "supportURL": "https://support.datahub.com/",
-    "connectionRequirements": "A DataHub cloud account is required."
-  }
+  ]
 }

@@ -1,0 +1,48 @@
+{
+  "name": "datahub-cloud",
+  "displayName": "DataHub Cloud",
+  "version": "1.0.0",
+  "description": "DataHub Cloud plugin \u2014 search the catalog, trace lineage, check data quality, and write SQL grounded in real metadata via the DataHub Cloud MCP server.",
+  "tagline": "Connect AI agents to enterprise data & context",
+  "shortDescription": "Search, trace lineage, and curate your DataHub catalog.",
+  "longDescription": "DataHub's MCP server gives AI agents the enterprise context they need to work with your data. Surface curated knowledge \u2014 runbooks, FAQs, business definitions, and vocabularies \u2014 so agents operate with the same shared understanding as your teams. Search across datasets, dashboards, and pipelines, then pull ownership, governance policies, quality signals, and documentation to understand what you're looking at. Trace lineage at the table and column level. Surface real SQL queries to see how data is actually used. Apply tags, glossary terms, owners, and descriptions at scale. The context layer that makes AI agents enterprise-ready.",
+  "author": {
+    "name": "Acryl Data, Inc.",
+    "url": "https://datahub.com/"
+  },
+  "homepage": "https://github.com/datahub-project/datahub-cloud-ai-plugins",
+  "repository": "https://github.com/datahub-project/datahub-cloud-ai-plugins",
+  "license": "Apache-2.0",
+  "keywords": [
+    "datahub",
+    "data-catalog",
+    "metadata",
+    "lineage",
+    "data-governance",
+    "data-quality",
+    "text-to-sql",
+    "mcp",
+    "data-engineering"
+  ],
+  "category": "Data & Analytics",
+  "brandColor": "#006dcd",
+  "icon": "assets/logo-square.svg",
+  "iconWide": "assets/logo.svg",
+  "mcpServerURL": "https://mcp.datahub.com/mcp",
+  "websiteURL": "https://datahub.com/",
+  "documentationURL": "https://docs.datahub.com/docs/features/feature-guides/mcp",
+  "privacyPolicyURL": "https://datahub.com/privacy-policy/",
+  "termsOfServiceURL": "https://datahub.com/terms-of-service/",
+  "dataProcessingAgreementURL": "https://datahub.com/dpa/",
+  "supportURL": "https://support.datahub.com/",
+  "connectionRequirements": "A DataHub cloud account is required.",
+  "capabilities": [
+    "Read",
+    "Write"
+  ],
+  "defaultPrompt": [
+    "Find the tables that answer this question in DataHub.",
+    "Trace what breaks downstream if I change this column.",
+    "Write SQL for this, grounded in DataHub catalog context."
+  ]
+}

@@ -1,6 +1,6 @@
 ---
 name: sql-grounded
-description: Write SQL grounded in catalog metadata using the datahub-sql-workflow skill
+description: Ground SQL in catalog evidence before drafting a query
 tags: [smoke, sql]
 runs: 3
 max_turns: 8
