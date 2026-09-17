@@ -1,6 +1,6 @@
 ---
 name: datahub-sql-workflow
-description: Write accurate SQL grounded in DataHub Cloud catalog metadata — find the right tables and columns, understand business definitions, and build queries based on verified schema and lineage context. Use when the user wants to write or understand a SQL query.
+description: Write accurate SQL grounded in DataHub Cloud catalog metadata — find the right tables and columns, understand business definitions, and build queries based on verified schema and lineage context. Use when the user wants to write or understand a SQL query. Always begin with find_sql_context, even when the user already named tables or supplied dataset URNs.
 version: "1.0.0"
 argument-hint: "[the question the query should answer]"
 ---
@@ -20,7 +20,8 @@ Ground every query in DataHub evidence. Use catalog metadata as the authority fo
 
 ## Workflow
 
-1. **Find SQL context** — search DataHub for existing queries, documented SQL patterns, or curated examples related to the user's question before anything else
+1. **Find SQL context** — call `find_sql_context(question=...)` before any other tool, even when the user already named tables or supplied URNs. It returns anchor documents with rendered query patterns, the datasets they use, and the dialect
+   - It reads **only** documents whose subtype is `Semantic Anchor`. Customer-authored docs are invisible to it, and that is often where join keys, latest-row rules, unit conventions and "do not use this table" warnings live — so follow up with `search_documents` for the non-anchor documentation on the candidate tables
 2. **Identify the right datasets** — search the catalog for candidate tables; if multiple match, use business glossary definitions and ownership to determine the right one
 3. **Verify schema** — fetch schema fields for the tables you plan to use; confirm column names, types, and descriptions
 4. **Check lineage if needed** — for complex queries spanning multiple tables, confirm join paths using lineage
@@ -28,7 +29,8 @@ Ground every query in DataHub evidence. Use catalog metadata as the authority fo
 6. **Present with sources** — show the final SQL alongside the DataHub entities it's based on
 
 ## MCP tools to use
-- `get_dataset_queries` — find existing SQL queries and patterns for a dataset (start here)
+- `find_sql_context` — anchor documents, query patterns, datasets and dialect for the question (start here)
+- `get_dataset_queries` — real SQL analysts run against a dataset
 - `search` — find candidate datasets by name, description, or business concept
 - `get_entities` — retrieve dataset details and documentation
 - `list_schema_fields` — verify exact column names, types, and descriptions
@@ -39,7 +41,7 @@ Ground every query in DataHub evidence. Use catalog metadata as the authority fo
 
 ## Rules
 - Use DataHub MCP tools exclusively — do not fall back to general knowledge or assumed schemas
-- Always call `get_dataset_queries` before writing any SQL — use existing patterns as anchors
+- Always call `find_sql_context` first — before any other catalog, drafting or probing tool
 - Never invent table names, column names, or join relationships without MCP evidence
 - If the right table is ambiguous, present the candidates and ask the user to choose
 - Only write SELECT queries — never write INSERT, UPDATE, DELETE, or DDL
