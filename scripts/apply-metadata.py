@@ -61,6 +61,7 @@ def codex_plugin():
         "repository": M["repository"],
         "license": M["license"],
         "keywords": M["keywords"],
+        "skills": "./skills",
         "mcpServers": "./.mcp.json",
         "interface": {
             "displayName": M["displayName"],
@@ -150,6 +151,15 @@ for rel in (M["icon"], M["iconWide"]):
     assert (HERE / rel).is_file(), f"icon missing: {rel}"
 vb = [float(x) for x in re.search(r'viewBox="([^"]*)"', (HERE / M["icon"]).read_text()).group(1).split()]
 assert abs(vb[2] - vb[3]) < 0.01, f"primary icon not 1:1: {vb[2]}x{vb[3]}"
+
+# skills/ is the default location for Claude Code and the fixed portable location
+# for Agent Plugins; only Codex needs it declared. One directory serves all three.
+_cx = json.loads((HERE / ".codex-plugin/plugin.json").read_text())
+_sk = HERE / _cx["skills"].lstrip("./")
+assert _sk.is_dir(), f"codex declares {_cx['skills']} but it does not exist"
+_names = sorted(d.name for d in _sk.iterdir() if (d / "SKILL.md").is_file())
+assert _names, "skills/ contains no SKILL.md directories"
+print(f"  skills/ resolves for all three clients: {len(_names)} skills")
 print("  manifests in sync with plugin-metadata.json; icon paths resolve")
 
 if CHECK_URLS:

@@ -1,6 +1,6 @@
 ---
 name: quality-check
-description: Check dataset health via the DataHub MCP entity tools
+description: Check data quality assertions for a dataset using the datahub-quality skill
 tags: [smoke, quality]
 runs: 3
 max_turns: 5

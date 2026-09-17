@@ -1,6 +1,6 @@
 ---
 name: lineage-upstream
-description: Trace upstream lineage via the DataHub MCP lineage tools
+description: Trace upstream lineage for a dataset using the datahub-lineage skill
 tags: [smoke, lineage]
 runs: 3
 max_turns: 6

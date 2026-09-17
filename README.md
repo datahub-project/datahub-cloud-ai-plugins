@@ -7,7 +7,8 @@ instance via the DataHub MCP server — catalog search, lineage exploration, dat
 quality, and SQL grounded in real metadata.
 
 One plugin, three manifests: the same tree installs into Claude Code, Codex, and
-any client implementing [Agent Plugins 1.0.0](https://agent-plugins.org/specification).
+any client implementing [Agent Plugins 1.0.0](https://agent-plugins.org/specification),
+and one `skills/` directory serves all three.
 
 ## Installation
 
@@ -48,15 +49,21 @@ pre-shared client ID. A `401` before you sign in is expected, not a fault.
 permissions follow the account you sign in as, governed by DataHub — this plugin
 sets no client-side capability flag.
 
-## Commands
+## Skills and commands
 
-| Command | Description |
-|---|---|
-| `/catalog-search` | Find datasets, dashboards, owners, tags and domains |
-| `/catalog-lineage` | Trace upstream/downstream flow and assess blast radius |
-| `/catalog-quality` | Check assertions, freshness, volume and health |
-| `/catalog-sql` | Write SQL grounded in verified catalog metadata |
-| `/catalog-setup` | Verify and troubleshoot the connection |
+| Skill | Command | Description |
+|---|---|---|
+| `datahub-search` | `/catalog-search` | Find datasets, dashboards, owners, tags and domains |
+| `datahub-lineage` | `/catalog-lineage` | Trace upstream/downstream flow and assess blast radius |
+| `datahub-quality` | `/catalog-quality` | Check assertions, freshness, volume and health |
+| `datahub-sql-workflow` | `/catalog-sql` | Write SQL grounded in verified catalog metadata |
+| `datahub-setup` | `/catalog-setup` | Verify and troubleshoot the connection |
+
+These are the public base template skills — deliberately basic, and equivalent to
+what is already published in
+[datahub-project/datahub-skills](https://github.com/datahub-project/datahub-skills).
+Skills are model-invoked, so natural language reaches them without a command; the
+commands are thin named entry points that delegate to the same skill.
 
 ```
 /catalog-search Find all Snowflake tables tagged PII in the Finance domain
@@ -66,8 +73,7 @@ sets no client-side capability flag.
 /catalog-setup Test my DataHub Cloud connection
 ```
 
-The MCP tools are also available to the agent directly, so natural language works
-without a command:
+Natural language reaches the same skills without a command:
 
 > "Who owns the customer_dim table?"
 > "What would break if we deleted the orders dataset?"
@@ -88,15 +94,18 @@ Metadata writes — tags, glossary terms, owners, domains, descriptions — are
 available when your account has permission. The exact set depends on your DataHub
 version; run `/mcp` to see what resolved.
 
-One filter gotcha worth knowing: tag, domain, glossary-term and owner filters take
-**full URNs** (`urn:li:tag:PII`), not display names. A display name returns zero
-results silently rather than erroring, so resolve the name to a URN first.
+One filter gotcha, documented in the search skill: `tag`, `domain`,
+`glossary_term`, `owner` and `container` filters take **full URNs**
+(`urn:li:tag:PII`), not display names. A display name returns zero results
+silently rather than erroring, so resolve the name to a URN first.
+`entity_type`, `platform` and `env` take plain values.
 
 ## Evals
 
 `evals/` holds four suites — catalog search, upstream lineage, quality check, and
-grounded SQL — each with a prompt, mocked MCP responses, and graders covering the
-tool call and the response quality. Results are gitignored.
+grounded SQL — one per skill. Each has a prompt, mocked MCP responses, and three
+graders: that the skill fired, that the right MCP tool was called, and an LLM
+judgement on response quality. Results are gitignored.
 
 ## Manifest metadata
 
@@ -108,7 +117,7 @@ generates them all:
 | File | Read by |
 |---|---|
 | `.claude-plugin/plugin.json` + `.mcp.json` | Claude Code |
-| `.codex-plugin/plugin.json` + `.mcp.json` | Codex |
+| `.codex-plugin/plugin.json` + `.mcp.json` | Codex (this one declares `skills`) |
 | `plugin.json` + `mcp.json` | Agent Plugins 1.0.0 clients |
 
 `--check` fails if any has drifted; `--check-urls` re-verifies every URL resolves,
