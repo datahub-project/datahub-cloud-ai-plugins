@@ -116,31 +116,41 @@ grounded SQL — one per skill. Each has a prompt, mocked MCP responses, and thr
 graders: that the skill fired, that the right MCP tool was called, and an LLM
 judgement on response quality. Results are gitignored.
 
-## Manifest metadata
+## Manifests
 
-Five manifests across three schemas, plus two MCP configs, repeat the same
-identity — so none is edited by hand. [`plugin-metadata.json`](plugin-metadata.json)
-is the source of truth and [`scripts/apply-metadata.py`](scripts/apply-metadata.py)
-generates them all:
+One plugin, described to three clients:
 
-| File | Read by |
-|---|---|
-| `.claude-plugin/plugin.json` + `.mcp.json` | Claude Code |
-| `.codex-plugin/plugin.json` + `.mcp.json` | Codex (this one declares `skills`) |
-| `plugin.json` + `mcp.json` | Agent Plugins 1.0.0 clients |
+| Manifest | Read by | MCP config |
+| --- | --- | --- |
+| `.claude-plugin/plugin.json` | Claude Code | `.mcp.json` |
+| `.codex-plugin/plugin.json` | Codex | `.mcp.json` (this one declares `skills`) |
+| `plugin.json` | Agent Plugins 1.0.0 clients | `mcp.json` |
 
-`--check` fails if any has drifted; `--check-urls` re-verifies every URL resolves,
-which is worth running before a directory submission.
+They repeat the same identity — name, version, description, author, license,
+keywords — so **change one and change all three**. Codex is the only client that
+reads the icon, brand color and legal URLs as first-class fields; Claude Code's
+`metadata` block is free-form and it does not read it, and the Agent Plugins root
+manifest is a closed ten-field schema with nowhere to put them.
 
-Where each field can live differs by schema. Only Codex reads the icon and legal
-URLs as first-class fields; Claude Code's `metadata` block is free-form and it
-doesn't read it, and the Agent Plugins root manifest is a closed schema with
-nowhere to put them.
+The two MCP configs differ by one token. `.mcp.json` uses `"type": "http"`, which
+is what Claude Code's `--transport` enum and every shipped remote plugin in both
+ecosystems use. `mcp.json` uses `"type": "streamable-http"`, which the Agent
+Plugins schema pins as a `const`. Same endpoint, same transport — neither
+accepts the other's spelling.
+
+Two things worth knowing when editing by hand:
+
+- **`claude plugin validate` never reads `.mcp.json`.** It validates the plugin
+  manifest only, so a broken MCP config passes validation silently. Check the
+  server actually connects with `/mcp`.
+- **The primary icon must stay 1:1.** Anthropic's MCP Directory submission
+  requires a square SVG; `assets/logo-square.svg` is the square one and
+  `assets/logo.svg` is the wide original.
 
 Before opening a PR:
 
 ```bash
-./scripts/apply-metadata.py --check && claude plugin validate . --strict
+claude plugin validate . --strict
 ```
 
 ## Related
