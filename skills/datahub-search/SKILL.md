@@ -1,13 +1,30 @@
 ---
 name: datahub-search
+argument-hint: "[what to find, or a question about your data]"
 description: |
-  Use this skill when the user wants to search the DataHub catalog, discover entities, answer ad-hoc questions about their data, find datasets, or browse by platform or domain. Triggers on: "search DataHub", "find datasets", "who owns X", "what tables contain PII", "what columns does X have", or any request to search, discover, browse, or answer one-off questions about DataHub metadata. For lineage questions ("what feeds into X"), use `/datahub-lineage`. For systematic audits ("how complete is our metadata"), use `/datahub-audit`.
 user-invocable: true
-min-cli-version: 1.4.0
-allowed-tools: Bash(datahub *)
 ---
 
 # DataHub Search
+
+## This plugin is MCP-only
+
+There is no DataHub CLI here. This plugin declares one MCP server and nothing
+else, so wherever this skill shows a `datahub ...` command, use the MCP tool with
+the same function instead:
+
+| CLI shown below | MCP tool |
+| --- | --- |
+| `datahub search` | `search` |
+| `datahub get` | `get_entities` |
+| `datahub lineage` | `get_lineage`, or `get_lineage_paths_between` for a path |
+| `datahub graphql` | no equivalent — the operation is unavailable, say so |
+| `datahub check` | `get_me` |
+
+Tool names are prefixed by the server (`mcp__datahub__search`). MCP tools are
+self-documenting, so read their schemas for parameter names rather than mapping
+CLI flags across literally. Where a section describes a CLI-only capability with
+no MCP tool, treat that capability as unavailable rather than improvising.
 
 You are an expert DataHub catalog navigator and metadata analyst. Your role is to help the user discover entities in their catalog and answer questions about their data by querying DataHub.
 
@@ -32,7 +49,6 @@ This skill is designed to work across multiple coding agents (Claude Code, Curso
 **Claude Code-specific features** (other agents can safely ignore these):
 
 - `allowed-tools` in the YAML frontmatter above
-- `Task(subagent_type="datahub-skills:metadata-searcher")` for delegated search — **fallback instructions are provided inline** for agents that cannot dispatch sub-agents
 
 **Reference file paths:** Shared references are in `../shared-references/` relative to this skill's directory. Skill-specific references are in `references/` and templates in `templates/`.
 
@@ -42,12 +58,11 @@ This skill is designed to work across multiple coding agents (Claude Code, Curso
 
 | If the user wants to...                                        | Use this instead   |
 | -------------------------------------------------------------- | ------------------ |
-| Explore lineage, upstream/downstream, impact analysis          | `/datahub-lineage` |
-| Create assertions, run quality checks, raise/resolve incidents | `/datahub-quality` |
-| Update metadata (descriptions, tags, ownership)                | `/datahub-enrich`  |
-| Install CLI, authenticate, configure defaults                  | `/datahub-setup`   |
+| Explore lineage, upstream/downstream, impact analysis          | `datahub-cloud:datahub-lineage` |
+| Create assertions, run quality checks, raise/resolve incidents | `datahub-cloud:datahub-quality` |
+| Install CLI, authenticate, configure defaults                  | `datahub-cloud:datahub-setup`   |
 
-**Key boundary:** Search answers **ad-hoc questions** ("who owns X?"). Audit generates **systematic reports** ("what percentage of tables lack owners?"). If the user wants a report with metrics and coverage percentages, that's Audit.
+**Key boundary:** Search answers **ad-hoc questions** ("who owns X?"). Systematic coverage reporting ("what percentage of tables lack owners?") is not a capability this plugin ships — say so rather than approximating one from a capped search.
 
 ---
 
@@ -92,7 +107,7 @@ Do not attempt the sort on a non-cloud instance — it will fail with a search e
 
 ### Lineage intents → redirect
 
-If the user wants lineage exploration ("what feeds into X", "what depends on X", "show lineage"), suggest using `/datahub-lineage` for the dedicated lineage skill. For simple one-hop lineage as part of a question, handle inline.
+If the user wants lineage exploration ("what feeds into X", "what depends on X", "show lineage"), suggest using `datahub-cloud:datahub-lineage` for the dedicated lineage skill. For simple one-hop lineage as part of a question, handle inline.
 
 ### Clarifying questions when needed
 
@@ -128,8 +143,8 @@ datahub search "*" --where "platform = snowflake AND entity_type = dataset AND e
 | User says                                     | Query     | Filters                                  | Entity Type |
 | --------------------------------------------- | --------- | ---------------------------------------- | ----------- |
 | "find revenue tables"                         | `revenue` | —                                        | `dataset`   |
-| "Snowflake datasets tagged PII"               | `*`       | `platform=snowflake`, `tags=pii`         | `dataset`   |
-| "dashboards owned by jdoe"                    | `*`       | `owners=jdoe`                            | `dashboard` |
+| "Snowflake datasets tagged PII"               | `*`       | `platform=snowflake`, `tag=urn:li:tag:PII`         | `dataset`   |
+| "dashboards owned by jdoe"                    | `*`       | `owner=urn:li:corpuser:jdoe`                            | `dashboard` |
 | "production BigQuery tables"                  | `*`       | `platform=bigquery`, `env=PROD`          | `dataset`   |
 | "tables with a customer_id column"            | `*`       | `fieldPaths=customer_id`                 | `dataset`   |
 | "Snowflake tables containing an email column" | `*`       | `platform=snowflake`, `fieldPaths=email` | `dataset`   |
@@ -139,12 +154,12 @@ datahub search "*" --where "platform = snowflake AND entity_type = dataset AND e
 | Question Pattern                               | Operations                                                                                                                                                                                  |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | "Who owns X?"                                  | 1. Search for X → 2. Get `ownership` aspect                                                                                                                                                 |
-| "What tables have PII tags?"                   | 1. Search with `tags=pii` filter, entity=dataset                                                                                                                                            |
+| "What tables have PII tags?"                   | 1. Search with `tag=urn:li:tag:PII` filter, entity=dataset                                                                                                                                            |
 | "How many datasets lack descriptions?"         | 1. Search with `--where "entity_type = dataset AND description IS NULL AND editableDescription IS NULL"` → 2. Project siblings to check effective coverage (see Step 3: Resolving siblings) |
-| "What does team X own?"                        | 1. Search with `owners=team-x` filter                                                                                                                                                       |
+| "What does team X own?"                        | 1. Search with `owner=urn:li:corpgroup:team-x` filter                                                                                                                                                       |
 | "What columns does X have?"                    | 1. Search for X → 2. Get `schemaMetadata` aspect                                                                                                                                            |
 | "Which tables contain a `customer_id` column?" | 1. Search `*` with `--where "entity_type = dataset AND fieldPaths = customer_id"`                                                                                                           |
-| "What's in the Finance domain?"                | 1. Search with `domain=finance` filter                                                                                                                                                      |
+| "What's in the Finance domain?"                | 1. Search with `domain=urn:li:domain:finance` filter                                                                                                                                                      |
 
 ### Structured property filters (special case)
 
@@ -200,7 +215,6 @@ The filter field is always `structuredProperties.<qualifiedName>` and requires a
 | **When available** | Preferred — structured I/O, no shell overhead | Fallback, or when you need `--projection`, `--dry-run`, advanced filters |
 | **Search**         | `search(query=..., filter=...)`               | `datahub search "..." --where "..."`                                     |
 | **Get entity**     | `get_entities(urns=[...])`                    | `datahub get --urn "..."`                                                |
-| **Browse**         | `browse(path=...)`                            | Not available via CLI                                                    |
 
 MCP tool names vary by server (e.g., `mcp__datahub__search`). Match by function suffix — MCP tools are self-documenting, so check their schemas for parameter details. See `../shared-references/datahub-cli-reference.md` for CLI syntax.
 
@@ -269,7 +283,6 @@ datahub search "customers" --projection "urn type
 **Only delegate when the query requires multiple complex searches with filtering and aggregation to synthesize a result set** — for example, searching across several platforms, combining results from multiple entity types with different filters, or gathering data that needs to be compiled into a file. For simple single-query lookups, execute inline — the overhead of spinning up a sub-agent isn't worth it.
 
 ```
-Task(subagent_type="datahub-skills:metadata-searcher")
 ```
 
 Provide the agent with the specific queries, filters, projections, and result limits.
@@ -377,8 +390,6 @@ When showing a single entity:
 ### Suggesting next steps
 
 - "Want to see the schema for any of these?"
-- "Want to update metadata? Use `/datahub-enrich`"
-- "Want a full audit? Use `/datahub-audit`"
 
 ---
 
@@ -408,8 +419,7 @@ When showing a single entity:
 - **User input contains shell metacharacters** (`` ` ``, `$`, `|`, `;`, `&`) → reject immediately, do not pass to CLI.
 - **Search returns 0 results** → suggest broadening filters or checking spelling before giving up.
 - **Query would fetch >100 entities** → stop and confirm with user before proceeding.
-- **User asks about lineage** ("what feeds into", "what depends on", "upstream", "downstream") → redirect to `/datahub-lineage`.
-- **User asks for a systematic report** ("how complete is our metadata", "generate a quality report") → redirect to `/datahub-audit`.
+- **User asks about lineage** ("what feeds into", "what depends on", "upstream", "downstream") → redirect to `datahub-cloud:datahub-lineage`.
 
 ---
 

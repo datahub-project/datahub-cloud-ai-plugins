@@ -1,5 +1,6 @@
 ---
 name: datahub-sql-workflow
+argument-hint: "[the question the query should answer]"
 description: Ground text-to-SQL work in DataHub catalog evidence. Use when a user asks to write, draft, debug, or execute SQL; answer a data question that requires SQL; calculate a metric; query named tables; or investigate SQL results with DataHub MCP tools available. Always begin with find_sql_context, even when the user already supplied tables or dataset URNs.
 license: Apache-2.0
 compatibility: Requires DataHub MCP tools (find_sql_context and catalog metadata tools); SQL execution engine optional
@@ -9,6 +10,25 @@ metadata:
 ---
 
 # DataHub SQL Workflow
+
+## This plugin is MCP-only
+
+There is no DataHub CLI here. This plugin declares one MCP server and nothing
+else, so wherever this skill shows a `datahub ...` command, use the MCP tool with
+the same function instead:
+
+| CLI shown below | MCP tool |
+| --- | --- |
+| `datahub search` | `search` |
+| `datahub get` | `get_entities` |
+| `datahub lineage` | `get_lineage`, or `get_lineage_paths_between` for a path |
+| `datahub graphql` | no equivalent — the operation is unavailable, say so |
+| `datahub check` | `get_me` |
+
+Tool names are prefixed by the server (`mcp__datahub__search`). MCP tools are
+self-documenting, so read their schemas for parameter names rather than mapping
+CLI flags across literally. Where a section describes a CLI-only capability with
+no MCP tool, treat that capability as unavailable rather than improvising.
 
 Ground every query in DataHub evidence. Treat business context as the authority
 for meaning, catalog metadata as the authority for physical shape, and historical

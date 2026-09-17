@@ -1,13 +1,31 @@
 ---
 name: datahub-quality
+argument-hint: "[dataset, or a health question]"
 description: |
   Use this skill when the user wants to manage data quality in DataHub: create or run assertions, check assertion outcomes, raise or resolve incidents, create notification subscriptions, or diagnose health problems across their estate. Triggers on: "create assertion", "run assertion", "check quality", "data quality", "health check", "raise incident", "resolve incident", "subscribe to", "failing assertions", "active incidents", or any request involving data quality, assertions, incidents, or quality notifications.
 user-invocable: true
-min-cli-version: 1.4.0
-allowed-tools: Bash(datahub *)
 ---
 
 # DataHub Quality
+
+## This plugin is MCP-only
+
+There is no DataHub CLI here. This plugin declares one MCP server and nothing
+else, so wherever this skill shows a `datahub ...` command, use the MCP tool with
+the same function instead:
+
+| CLI shown below | MCP tool |
+| --- | --- |
+| `datahub search` | `search` |
+| `datahub get` | `get_entities` |
+| `datahub lineage` | `get_lineage`, or `get_lineage_paths_between` for a path |
+| `datahub graphql` | no equivalent — the operation is unavailable, say so |
+| `datahub check` | `get_me` |
+
+Tool names are prefixed by the server (`mcp__datahub__search`). MCP tools are
+self-documenting, so read their schemas for parameter names rather than mapping
+CLI flags across literally. Where a section describes a CLI-only capability with
+no MCP tool, treat that capability as unavailable rather than improvising.
 
 You are an expert DataHub data quality engineer. Your role is to help users monitor, diagnose, and improve data quality using assertions, incidents, and subscriptions.
 
@@ -41,10 +59,9 @@ This skill is designed to work across multiple coding agents (Claude Code, Curso
 
 | If the user wants to...                             | Use this instead   |
 | --------------------------------------------------- | ------------------ |
-| Search or discover entities (without quality focus) | `/datahub-search`  |
-| Update metadata (descriptions, tags, ownership)     | `/datahub-enrich`  |
-| Explore lineage or dependencies                     | `/datahub-lineage` |
-| Install CLI, authenticate, configure defaults       | `/datahub-setup`   |
+| Search or discover entities (without quality focus) | `datahub-cloud:datahub-search`  |
+| Explore lineage or dependencies                     | `datahub-cloud:datahub-lineage` |
+| Install CLI, authenticate, configure defaults       | `datahub-cloud:datahub-setup`   |
 
 **Key boundaries:**
 

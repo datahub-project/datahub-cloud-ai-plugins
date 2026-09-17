@@ -1,6 +1,13 @@
 # DataHub CLI Reference
 
-Commands verified against DataHub CLI v1.4.0. Install via `pip install acryl-datahub`.
+> **This plugin has no DataHub CLI.** It declares one MCP server and nothing else,
+> so do not install the CLI and do not run any command below. This file is kept for
+> the semantics the commands encode — filter keys and their value formats, the
+> entity model, and what each operation returns — which carry over to the MCP tools.
+> Use the MCP tool with the same function instead: `search`, `get_entities`,
+> `get_lineage`, `list_schema_fields`.
+
+Commands documented against DataHub CLI v1.4.0, for reference only.
 
 ---
 
@@ -10,7 +17,7 @@ Before running any DataHub commands, determine which tools are available:
 
 1. **MCP tools available** — If tools like `datahub_search`, `datahub_get_entity`, `datahub_get_lineage` are in your tool list, use them directly. They are the preferred path — no CLI installation needed.
 2. **CLI available** — If you have a `Bash` tool, check: `which datahub`. If found, use the CLI commands documented below.
-3. **Neither** — Suggest the user set up a DataHub connection using `/datahub-setup`.
+3. **Neither** — Suggest the user set up a DataHub connection using `datahub-cloud:datahub-setup`.
 
 **MCP takes priority over CLI** when both are available — MCP tools are purpose-built for agent use with structured inputs/outputs and no shell overhead.
 
@@ -22,7 +29,6 @@ Before running any DataHub commands, determine which tools are available:
 | Get entity         | `datahub get --urn "..." --aspect ownership`         | `get_entities(urns=["..."])`             |
 | Upstream lineage   | `datahub lineage --urn "..." --direction upstream`   | `get_lineage(urn="...", upstream=true)`  |
 | Downstream lineage | `datahub lineage --urn "..." --direction downstream` | `get_lineage(urn="...", upstream=false)` |
-| GraphQL            | `datahub graphql --query '...'`                      | `execute_graphql(query="...")`           |
 | Server config      | `datahub check server-config`                        | Not needed (MCP server handles config)   |
 
 MCP tool names may be prefixed (e.g. `mcp__datahub-cloud__search`). Match by the function name suffix, not the full prefixed name. MCP tools are self-documenting — check their schemas for parameter details rather than relying on static documentation.

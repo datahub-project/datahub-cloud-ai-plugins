@@ -1,13 +1,31 @@
 ---
 name: datahub-lineage
+argument-hint: "[dataset, column, or an impact question]"
 description: |
   Use this skill when the user wants to explore lineage, trace data dependencies, perform impact analysis, find root causes, map data pipelines, or understand how data flows between systems. Triggers on: "what feeds into X", "what depends on X", "show lineage for X", "impact analysis", "trace the pipeline", "root cause", "upstream of X", "downstream of X", or any request involving data lineage and dependency tracking.
 user-invocable: true
-min-cli-version: 1.5.0.1rc1
-allowed-tools: Bash(datahub *)
 ---
 
 # DataHub Lineage
+
+## This plugin is MCP-only
+
+There is no DataHub CLI here. This plugin declares one MCP server and nothing
+else, so wherever this skill shows a `datahub ...` command, use the MCP tool with
+the same function instead:
+
+| CLI shown below | MCP tool |
+| --- | --- |
+| `datahub search` | `search` |
+| `datahub get` | `get_entities` |
+| `datahub lineage` | `get_lineage`, or `get_lineage_paths_between` for a path |
+| `datahub graphql` | no equivalent — the operation is unavailable, say so |
+| `datahub check` | `get_me` |
+
+Tool names are prefixed by the server (`mcp__datahub__search`). MCP tools are
+self-documenting, so read their schemas for parameter names rather than mapping
+CLI flags across literally. Where a section describes a CLI-only capability with
+no MCP tool, treat that capability as unavailable rather than improvising.
 
 You are an expert DataHub lineage analyst. Your role is to help the user understand how data flows through their systems — tracing upstream sources, downstream consumers, cross-platform dependencies, and assessing the impact of changes.
 
@@ -26,7 +44,6 @@ This skill is designed to work across multiple coding agents (Claude Code, Curso
 **Claude Code-specific features** (other agents can safely ignore these):
 
 - `allowed-tools` in the YAML frontmatter above
-- `Task(subagent_type="datahub-skills:metadata-searcher")` for delegated entity lookup — only when multiple complex searches are needed to resolve and enrich a large lineage graph. For simple entity lookups, execute inline. **Fallback instructions are provided inline** for agents without sub-agent dispatch.
 
 **Reference file paths:** Shared references are in `../shared-references/` relative to this skill's directory. Skill-specific references are in `references/` and templates in `templates/`.
 
@@ -36,12 +53,11 @@ This skill is designed to work across multiple coding agents (Claude Code, Curso
 
 | If the user wants to...                                 | Use this instead                                 |
 | ------------------------------------------------------- | ------------------------------------------------ |
-| Search for entities by keyword or metadata              | `/datahub-search`                                |
-| Answer "who owns X?" or "what is X?"                    | `/datahub-search` (metadata lookup, not lineage) |
-| Add or update metadata (descriptions, tags, owners)     | `/datahub-enrich`                                |
-| Create assertions, run quality checks, manage incidents | `/datahub-quality`                               |
+| Search for entities by keyword or metadata              | `datahub-cloud:datahub-search`                                |
+| Answer "who owns X?" or "what is X?"                    | `datahub-cloud:datahub-search` (metadata lookup, not lineage) |
+| Create assertions, run quality checks, manage incidents | `datahub-cloud:datahub-quality`                               |
 
-**Key boundary:** Lineage handles **lineage and dependency questions** ("what feeds into X?", "what breaks if I change X?"). Search handles **metadata questions** ("who owns X?"). Enrich handles **metadata updates** ("set owner", "tag this").
+**Key boundary:** Lineage handles **lineage and dependency questions** ("what feeds into X?", "what breaks if I change X?"). Search handles **metadata questions** ("who owns X?").
 
 ---
 
@@ -213,8 +229,6 @@ PostgreSQL           Snowflake              Looker
 After presenting lineage:
 
 - "Want to see metadata details for any of these?" → fetch with `datahub search` using `--projection` with ownership, descriptions, siblings
-- "Want to update metadata along this pipeline? Use `/datahub-enrich`"
-- "Want to run an impact audit? Use `/datahub-audit`"
 
 ---
 
@@ -240,7 +254,6 @@ After presenting lineage:
 - **User input contains shell metacharacters** → reject, do not pass to CLI.
 - **Traversal depth > 3 hops** → confirm with user before proceeding.
 - **Lineage returns 0 edges** → entity may not have lineage ingested. Note this rather than saying "no dependencies."
-- **User asks about metadata, not lineage** ("who owns X?", "add a tag") → redirect to `/datahub-search` or `/datahub-enrich`.
 
 ---
 
