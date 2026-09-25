@@ -8,7 +8,7 @@ Create a **With MCP** draft in the [plugin submission portal](https://platform.o
 - **Short description:** Explore your data catalog and draft grounded SQL.
 - **Long description:** Find datasets and owners, trace upstream and downstream lineage, inspect data quality, and draft SELECT queries grounded in DataHub Cloud metadata.
 - **Developer:** DataHub Project (select the matching verified publisher identity in the portal)
-- **Website:** https://datahubproject.io
+- **Website:** https://datahub.com/
 - **MCP URL type:** Universal
 - **MCP URL:** https://mcp.datahub.com/mcp
 - **Authentication:** OAuth; confirm the production server's configuration in the portal

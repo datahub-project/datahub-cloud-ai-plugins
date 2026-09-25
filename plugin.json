@@ -19,7 +19,7 @@
         "developerName": "DataHub Project",
         "category": "Productivity",
         "capabilities": ["Read", "Write"],
-        "websiteURL": "https://datahubproject.io",
+        "websiteURL": "https://datahub.com/",
         "defaultPrompt": [
           "Find datasets about orders in my DataHub catalog",
           "Trace the upstream lineage of a dataset",

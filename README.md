@@ -42,7 +42,7 @@ For Claude Code skills, run `npx skills add datahub-project/datahub-cloud-ai-plu
 
 ## Links
 
-- [DataHub documentation](https://datahubproject.io/docs)
+- [DataHub documentation](https://docs.datahub.com/)
 - [DataHub developer skills](https://github.com/datahub-project/datahub-skills)
 
 Licensed under Apache-2.0.
