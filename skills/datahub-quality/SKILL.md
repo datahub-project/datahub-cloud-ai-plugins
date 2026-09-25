@@ -1,7 +1,6 @@
 ---
 name: datahub-quality
 description: Check data quality in DataHub Cloud — view assertion results, find failing checks, investigate data freshness and volume issues, and understand the health of datasets. Use when the user asks about data quality, reliability, or health.
-version: "1.0.0"
 ---
 
 # DataHub Quality Skill

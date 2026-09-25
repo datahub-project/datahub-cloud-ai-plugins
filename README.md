@@ -1,69 +1,46 @@
-# DataHub Cloud — AI Plugins
+# DataHub Cloud AI plugin
 
-Plugins that connect Claude, Codex, & ChatGPT to your [DataHub Cloud](https://datahubproject.io) instance via the DataHub MCP server — enabling catalog search, lineage exploration, data quality monitoring, and SQL grounded in real metadata.
+A portable [Agent Plugins](https://developers.openai.com/plugins/build/plugins) package for exploring a DataHub Cloud catalog through the [DataHub MCP server](https://mcp.datahub.com/mcp). It includes skills for catalog search, lineage, data quality, connection troubleshooting, and SQL grounded in catalog metadata.
 
-## Installation
+## Package layout
 
-```bash
-npx skills add datahub-project/datahub-cloud-ai-plugins
-```
+| Path | Purpose |
+| --- | --- |
+| `plugin.json` | Portable plugin identity and OpenAI presentation metadata |
+| `mcp.json` | Portable Streamable HTTP connection to DataHub Cloud |
+| `skills/` | Workflows shared across supported hosts |
+| `.codex-plugin/plugin.json`, `.mcp.json` | Codex compatibility files for older plugin hosts |
+| `.claude-plugin/plugin.json`, `commands/` | Claude Code compatibility files |
 
-Or search for **datahub-cloud** in the Claude marketplace.
+The MCP server uses OAuth for access to each user's DataHub Cloud catalog. Do not put credentials in this package.
 
-## Authentication
+## Use the plugin
 
-This plugin connects to DataHub Cloud via the MCP server at `https://mcp.datahub.com/mcp`. Authentication is handled automatically via OAuth — no tokens or environment variables needed.
+Ask in natural language, for example:
 
-## Skills and Commands
+- "Who owns the customer_dim dataset?"
+- "What depends on the orders table?"
+- "Which checks are failing for revenue_metrics?"
+- "Draft a SELECT query for monthly revenue by product line using verified schema."
+- "Test my DataHub Cloud connection."
 
-| Skill | Command | Description |
-|---|---|---|
-| `datahub-search` | `/catalog-search` | Find datasets, dashboards, owners, tags, domains |
-| `datahub-lineage` | `/catalog-lineage` | Trace upstream/downstream data flow and dependencies |
-| `datahub-quality` | `/catalog-quality` | Check assertions, freshness, volume, and data health |
-| `datahub-sql-workflow` | `/catalog-sql` | Write SQL grounded in verified catalog metadata |
-| `datahub-setup` | `/catalog-setup` | Verify and troubleshoot the DataHub Cloud connection |
+The five workflows live in `skills/datahub-search`, `skills/datahub-lineage`, `skills/datahub-quality`, `skills/datahub-sql-workflow`, and `skills/datahub-setup`. Claude Code also provides `/catalog-search`, `/catalog-lineage`, `/catalog-quality`, `/catalog-sql`, and `/catalog-setup` commands.
 
-## Usage Examples
+## Submit to OpenAI
 
-```
-/catalog-search Find all Snowflake tables tagged PII in the Finance domain
-/catalog-lineage What does the orders table feed into downstream?
-/catalog-quality Show failing data quality checks for the revenue dataset
-/catalog-sql Write a query for monthly active users by region
-/catalog-setup Test my DataHub Cloud connection
-```
+Use a **With MCP** submission in the [OpenAI plugin portal](https://platform.openai.com/plugins). Submit `https://mcp.datahub.com/mcp` as a **Universal** remote MCP URL, and upload the final `skills/` bundle in the same draft. The portable `plugin.json` and `mcp.json` are the source package for compatible hosts; the portal separately scans the remote MCP server and its tools. See [submission/README.md](submission/README.md) for the listing copy, test cases, and remaining publisher tasks.
 
-Skills are also invoked automatically from natural language:
+Run `python3 submission/package.py` to build both ZIPs in `dist/`: a portable package for compatible hosts and a skills bundle for the portal's Skills tab. Rebuild after editing a skill or manifest.
 
-> "Who owns the customer_dim table?"
-> "What would break if we deleted the orders dataset?"
-> "Is the revenue_metrics table up to date?"
-> "Help me query monthly revenue by product line"
+OpenAI's [submission guide](https://developers.openai.com/plugins/deploy/submission) requires domain verification, an approved publisher identity, reviewer access to authenticated tools, and a completed listing before review. These steps require access to the DataHub service and the publishing organization.
 
-## MCP Tools
+## Other installation options
 
-This plugin uses the following DataHub MCP tools:
+For Claude Code skills, run `npx skills add datahub-project/datahub-cloud-ai-plugins` or find **datahub-cloud** in the Claude marketplace. Other hosts that support Agent Plugins can load this repository's portable package.
 
-| Tool | Used by |
-|---|---|
-| `search` | search, lineage, quality, sql-workflow |
-| `get_entities` | search, lineage, quality |
-| `get_lineage` | lineage |
-| `get_lineage_paths_between` | lineage |
-| `list_schema_fields` | search, sql-workflow |
-| `get_dataset_queries` | sql-workflow |
-| `draft_sql_for_tables` | sql-workflow |
-| `search_documents` / `grep_documents` | search, sql-workflow |
-| `get_me` | setup |
-| `note_metadata_observation` | sql-workflow |
-| `list_lifecycle_stages` | quality |
+## Links
 
-## Related
+- [DataHub documentation](https://datahubproject.io/docs)
+- [DataHub developer skills](https://github.com/datahub-project/datahub-skills)
 
-- [datahub-skills](https://github.com/datahub-project/datahub-skills) — Developer skills for building DataHub connectors, reviewing connector PRs, and writing ingestion code
-- [DataHub Documentation](https://datahubproject.io/docs)
-
-## License
-
-Apache 2.0
+Licensed under Apache-2.0.

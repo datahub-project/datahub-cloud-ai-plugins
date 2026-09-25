@@ -1,7 +1,6 @@
 ---
 name: datahub-setup
-description: Verify and troubleshoot the DataHub Cloud connection — confirm the MCP server is reachable, authentication is working, and Claude can access the catalog. Use when the user wants to set up DataHub, test the connection, or fix connectivity issues.
-version: "1.0.0"
+description: Verify and troubleshoot the DataHub Cloud connection — confirm the MCP server is reachable, authentication is working, and the assistant can access the catalog. Use when the user wants to set up DataHub, test the connection, or fix connectivity issues.
 ---
 
 # DataHub Setup Skill

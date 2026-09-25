@@ -1,7 +1,6 @@
 ---
 name: datahub-sql-workflow
 description: Write accurate SQL grounded in DataHub Cloud catalog metadata — find the right tables and columns, understand business definitions, and build queries based on verified schema and lineage context. Use when the user wants to write or understand a SQL query.
-version: "1.0.0"
 ---
 
 # DataHub SQL Workflow Skill
@@ -34,7 +33,6 @@ Ground every query in DataHub evidence. Use catalog metadata as the authority fo
 - `get_lineage` — confirm join paths between tables when needed
 - `search_documents` / `grep_documents` — find curated business documentation and definitions
 - `draft_sql_for_tables` — generate a SQL draft from verified table URNs
-- `note_metadata_observation` — record discrepancies found during research (e.g. schema drift)
 
 ## Rules
 - Use DataHub MCP tools exclusively — do not fall back to general knowledge or assumed schemas
@@ -42,5 +40,6 @@ Ground every query in DataHub evidence. Use catalog metadata as the authority fo
 - Never invent table names, column names, or join relationships without MCP evidence
 - If the right table is ambiguous, present the candidates and ask the user to choose
 - Only write SELECT queries — never write INSERT, UPDATE, DELETE, or DDL
+- Do not change DataHub metadata while drafting a query; report any discrepancies to the user
 - Flag any assumptions or unresolved ambiguities clearly before presenting SQL
 - Cite the DataHub entity (name or URN) for every table used in the query

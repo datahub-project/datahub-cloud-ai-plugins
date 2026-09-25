@@ -1,0 +1,31 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "datahub-cloud",
+  "version": "1.0.0",
+  "description": "Search the DataHub Cloud catalog, trace lineage, investigate data quality, and draft SQL using verified metadata.",
+  "author": {
+    "name": "DataHub Project"
+  },
+  "homepage": "https://github.com/datahub-project/datahub-cloud-ai-plugins",
+  "repository": "https://github.com/datahub-project/datahub-cloud-ai-plugins",
+  "license": "Apache-2.0",
+  "keywords": ["data-catalog", "lineage", "data-quality", "sql"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "DataHub Cloud",
+        "shortDescription": "Explore your data catalog and draft grounded SQL.",
+        "longDescription": "Find datasets and owners, trace upstream and downstream lineage, inspect data quality, and draft SELECT queries grounded in DataHub Cloud metadata.",
+        "developerName": "DataHub Project",
+        "category": "Productivity",
+        "capabilities": ["Read", "Write"],
+        "websiteURL": "https://datahubproject.io",
+        "defaultPrompt": [
+          "Find datasets about orders in my DataHub catalog",
+          "Trace the upstream lineage of a dataset",
+          "Draft SQL using verified DataHub table schemas"
+        ]
+      }
+    }
+  }
+}
