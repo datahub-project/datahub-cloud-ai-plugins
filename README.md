@@ -26,14 +26,6 @@ Ask in natural language, for example:
 
 The five workflows live in `skills/datahub-search`, `skills/datahub-lineage`, `skills/datahub-quality`, `skills/datahub-sql-workflow`, and `skills/datahub-setup`. Claude Code also provides `/catalog-search`, `/catalog-lineage`, `/catalog-quality`, `/catalog-sql`, and `/catalog-setup` commands.
 
-## Submit to OpenAI
-
-Use a **With MCP** submission in the [OpenAI plugin portal](https://platform.openai.com/plugins). Submit `https://mcp.datahub.com/mcp` as a **Universal** remote MCP URL, and upload the final `skills/` bundle in the same draft. The portable `plugin.json` and `mcp.json` are the source package for compatible hosts; the portal separately scans the remote MCP server and its tools. See [submission/README.md](submission/README.md) for the listing copy, test cases, and remaining publisher tasks.
-
-Run `python3 submission/package.py` to build both ZIPs in `dist/`: a portable package for compatible hosts and a skills bundle for the portal's Skills tab. Rebuild after editing a skill or manifest.
-
-OpenAI's [submission guide](https://developers.openai.com/plugins/deploy/submission) requires domain verification, an approved publisher identity, reviewer access to authenticated tools, and a completed listing before review. These steps require access to the DataHub service and the publishing organization.
-
 ## Other installation options
 
 To add this checkout as a local Codex marketplace, run `codex plugin marketplace add /absolute/path/to/datahub-cloud-ai-plugins`, then `codex plugin add datahub-cloud@datahub-cloud-ai-plugins`. The marketplace catalog is `.agents/plugins/marketplace.json`; its plugin source points to this repository root.
