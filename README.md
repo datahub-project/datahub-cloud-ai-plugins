@@ -21,6 +21,13 @@ Or search for **datahub-cloud** in the Claude marketplace.
 Codex discovers this repo's `.codex-plugin/plugin.json` when you install from a
 clone; other clients read the root `plugin.json` and `mcp.json`.
 
+To install this checkout as a local Codex marketplace, run:
+
+```bash
+codex plugin marketplace add /absolute/path/to/datahub-cloud-ai-plugins
+codex plugin add datahub-cloud@datahub-cloud-ai-plugins
+```
+
 ## Authentication
 
 The plugin connects to `https://mcp.datahub.com/mcp` over **OAuth 2.0 with dynamic
