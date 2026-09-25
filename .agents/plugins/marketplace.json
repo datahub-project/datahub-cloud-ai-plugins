@@ -1,0 +1,20 @@
+{
+  "name": "datahub-cloud-ai-plugins",
+  "interface": {
+    "displayName": "DataHub Cloud AI Plugins"
+  },
+  "plugins": [
+    {
+      "name": "datahub-cloud",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

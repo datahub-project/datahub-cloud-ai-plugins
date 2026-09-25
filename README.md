@@ -36,6 +36,8 @@ OpenAI's [submission guide](https://developers.openai.com/plugins/deploy/submiss
 
 ## Other installation options
 
+To add this checkout as a local Codex marketplace, run `codex plugin marketplace add /absolute/path/to/datahub-cloud-ai-plugins`, then `codex plugin add datahub-cloud@datahub-cloud-ai-plugins`. The marketplace catalog is `.agents/plugins/marketplace.json`; its plugin source points to this repository root.
+
 For Claude Code skills, run `npx skills add datahub-project/datahub-cloud-ai-plugins` or find **datahub-cloud** in the Claude marketplace. Other hosts that support Agent Plugins can load this repository's portable package.
 
 ## Links
