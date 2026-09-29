@@ -35,7 +35,6 @@
     "websiteURL": "https://datahub.com/",
     "privacyPolicyURL": "https://datahub.com/privacy-policy/",
     "termsOfServiceURL": "https://datahub.com/terms-of-service/",
-    "supportURL": "https://support.datahub.com/",
     "brandColor": "#006dcd",
     "composerIcon": "./assets/logo-square.svg",
     "logo": "./assets/logo-square.svg",

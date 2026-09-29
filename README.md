@@ -18,8 +18,16 @@ npx skills add datahub-project/datahub-cloud-ai-plugins
 
 Or search for **datahub-cloud** in the Claude marketplace.
 
-Codex discovers this repo's `.codex-plugin/plugin.json` when you install from a
-clone; other clients read the root `plugin.json` and `mcp.json`.
+Codex reads the root `plugin.json`, including `extensions.com.openai.interface`;
+older Codex hosts use `.codex-plugin/plugin.json`. Other Agent Plugins clients
+read the root `plugin.json` and `mcp.json`.
+
+To install this checkout as a local Codex marketplace, run:
+
+```bash
+codex plugin marketplace add /absolute/path/to/datahub-cloud-ai-plugins
+codex plugin add datahub-cloud@datahub-cloud-ai-plugins
+```
 
 ## Authentication
 
@@ -127,16 +135,16 @@ One plugin, described to three clients:
 | `plugin.json` | Agent Plugins 1.0.0 clients | `mcp.json` |
 
 They repeat the same identity — name, version, description, author, license,
-keywords — so **change one and change all three**. Codex is the only client that
-reads the icon, brand color and legal URLs as first-class fields; Claude Code's
-`metadata` block is free-form and it does not read it, and the Agent Plugins root
-manifest is a closed ten-field schema with nowhere to put them.
+keywords — so **change one and change all three**. OpenAI reads presentation and
+legal URLs from `extensions.com.openai.interface` in the portable root manifest;
+the `.codex-plugin/plugin.json` interface is a compatibility fallback. Keep those
+two interface blocks in sync. Claude Code's `metadata` block is free-form and it
+does not read it.
 
-The two MCP configs differ by one token. `.mcp.json` uses `"type": "http"`, which
-is what Claude Code's `--transport` enum and every shipped remote plugin in both
-ecosystems use. `mcp.json` uses `"type": "streamable-http"`, which the Agent
-Plugins schema pins as a `const`. Same endpoint, same transport — neither
-accepts the other's spelling.
+The two MCP configs use different transport labels. `.mcp.json` uses
+`"type": "http"` and declares the OAuth resource for Claude Code. The portable
+`mcp.json` uses `"type": "streamable-http"`, as required by the Agent Plugins
+schema. Both point to the same DataHub endpoint.
 
 Two things worth knowing when editing by hand:
 

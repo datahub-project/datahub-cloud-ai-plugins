@@ -1,7 +1,7 @@
 ---
 name: datahub-search
 argument-hint: "[what to find, or a question about your data]"
-description: |
+description: Search and explore the DataHub Cloud data catalog — find datasets, dashboards, pipelines, columns, owners, tags, domains, and any metadata. Use when the user wants to find, discover, or look up anything in their data catalog.
 user-invocable: true
 ---
 
