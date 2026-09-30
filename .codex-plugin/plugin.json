@@ -24,7 +24,7 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "DataHub Cloud",
-    "shortDescription": "Search, trace lineage, and curate your DataHub catalog.",
+    "shortDescription": "Search, lineage, and quality",
     "longDescription": "DataHub's MCP server gives AI agents the enterprise context they need to work with your data. Surface curated knowledge \u2014 runbooks, FAQs, business definitions, and vocabularies \u2014 so agents operate with the same shared understanding as your teams. Search across datasets, dashboards, and pipelines, then pull ownership, governance policies, quality signals, and documentation to understand what you're looking at. Trace lineage at the table and column level. Surface real SQL queries to see how data is actually used. Apply tags, glossary terms, owners, and descriptions at scale. The context layer that makes AI agents enterprise-ready.",
     "developerName": "Acryl Data, Inc.",
     "category": "Data & Analytics",
@@ -33,6 +33,7 @@
       "Write"
     ],
     "websiteURL": "https://datahub.com/",
+    "supportURL": "https://support.datahub.com/",
     "privacyPolicyURL": "https://datahub.com/privacy-policy/",
     "termsOfServiceURL": "https://datahub.com/terms-of-service/",
     "brandColor": "#006dcd",
