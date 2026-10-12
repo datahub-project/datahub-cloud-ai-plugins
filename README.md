@@ -203,7 +203,8 @@ To publish a new version:
 1. Update `version` in `plugin.json`, `.claude-plugin/plugin.json`, and
    `.codex-plugin/plugin.json` to the same semantic version. Commit and merge
    those changes to `main` after the checks pass.
-2. Tag the merged commit and push the tag (replace `1.0.1` with your version):
+2. As a repository administrator, tag the merged commit and push the tag
+   (replace `1.0.1` with your version):
 
    ```bash
    git switch main
@@ -212,7 +213,8 @@ To publish a new version:
    git push origin v1.0.1
    ```
 
-3. The **Portable plugin release** workflow validates the tag, builds the ZIP,
+3. The **Portable plugin release** workflow checks that the tagged commit is
+   reachable from the current `main` branch, validates the version, builds the ZIP,
    and publishes a GitHub Release with the ZIP, checksum, and generated release
    notes. Tags such as `v1.1.0-rc.1` create prereleases. A tag/version mismatch
    fails before publication; existing releases are never overwritten.
@@ -221,6 +223,25 @@ Pull requests and pushes to `main` run the same packaging checks and retain the
 ZIP as a workflow artifact. You can also run the workflow manually to build an
 artifact without publishing a release. Publication uses the workflow's
 `GITHUB_TOKEN` with `contents: write`; no separate release token is needed.
+
+The repository's release-tag ruleset restricts creation and updates of `v*`
+tags to repository administrators. This GitHub-side protection matters because
+the workflow itself comes from the tagged commit. The ancestry check rejects
+accidental tags on unmerged commits; the ruleset controls who can trigger a
+release or change its workflow through a tag.
+
+The ruleset configuration is recorded in `.github/release-tag-ruleset.json`.
+It must be configured separately in GitHub; committing the file does not activate
+the policy. For a new repository, an administrator can apply it with:
+
+```bash
+gh api --method POST repos/OWNER/REPO/rulesets \
+  --input .github/release-tag-ruleset.json
+```
+
+Inspect existing rulesets before applying this configuration to avoid creating
+duplicates. Ordinary PRs and manual artifact builds do not require a release tag
+or a commit on `main`.
 
 ## License
 
