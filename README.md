@@ -168,6 +168,60 @@ claude plugin validate . --strict
   ingestion code
 - [DataHub documentation](https://docs.datahub.com)
 
+## Portable ZIP and releases
+
+Download `datahub-cloud-portable-<version>.zip` from
+[GitHub Releases](https://github.com/datahub-project/datahub-cloud-ai-plugins/releases).
+Each ZIP contains a `datahub-cloud/` directory with the portable `plugin.json`
+and `mcp.json`, Claude and Codex manifests, local marketplace metadata, skills,
+and logo assets.
+Extract the ZIP and use that directory with your client's local plugin installer.
+Evaluation fixtures and local development files are excluded.
+
+To build locally with Python 3.10 or newer:
+
+```bash
+python3 scripts/package.py
+```
+
+The build writes the ZIP and a `.zip.sha256` checksum to `dist/`. To verify a
+download on macOS, run `shasum -a 256 -c <zip-filename>.sha256` in the download
+directory; on Linux, use `sha256sum --check <zip-filename>.sha256`.
+
+Before releasing, run the same checks used by CI:
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+ruff format --check scripts tests
+ruff check scripts tests
+python3 -m unittest discover -s tests -v
+python3 scripts/package.py
+```
+
+To publish a new version:
+
+1. Update `version` in `plugin.json`, `.claude-plugin/plugin.json`, and
+   `.codex-plugin/plugin.json` to the same semantic version. Commit and merge
+   those changes to `main` after the checks pass.
+2. Tag the merged commit and push the tag (replace `1.0.1` with your version):
+
+   ```bash
+   git switch main
+   git pull --ff-only
+   git tag -a v1.0.1 -m "DataHub Cloud 1.0.1"
+   git push origin v1.0.1
+   ```
+
+3. The **Portable plugin release** workflow validates the tag, builds the ZIP,
+   and publishes a GitHub Release with the ZIP, checksum, and generated release
+   notes. Tags such as `v1.1.0-rc.1` create prereleases. A tag/version mismatch
+   fails before publication; existing releases are never overwritten.
+
+Pull requests and pushes to `main` run the same packaging checks and retain the
+ZIP as a workflow artifact. You can also run the workflow manually to build an
+artifact without publishing a release. Publication uses the workflow's
+`GITHUB_TOKEN` with `contents: write`; no separate release token is needed.
+
 ## License
 
 Apache-2.0. The DataHub mark is a trademark — see
