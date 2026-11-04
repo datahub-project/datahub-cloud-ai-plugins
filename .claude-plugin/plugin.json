@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "datahub-cloud",
   "displayName": "DataHub Cloud",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "DataHub Cloud plugin \u2014 search the catalog, trace lineage, check data quality, and write SQL grounded in real metadata via the DataHub Cloud MCP server.",
   "author": {
     "name": "Acryl Data, Inc.",
@@ -32,5 +32,13 @@
     "dataProcessingAgreementURL": "https://datahub.com/dpa/",
     "supportURL": "https://support.datahub.com/",
     "connectionRequirements": "A DataHub cloud account is required."
+  },
+  "userConfig": {
+    "datahub_mcp_url": {
+      "type": "string",
+      "title": "DataHub MCP URL",
+      "description": "Your DataHub tenant's MCP endpoint: an https URL ending in /mcp, such as https://your-company.acryl.io/mcp. Use https://mcp.datahub.com/mcp to connect through the shared DataHub MCP gateway instead.",
+      "required": true
+    }
   }
 }

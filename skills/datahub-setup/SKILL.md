@@ -17,7 +17,10 @@ Help users verify and troubleshoot their DataHub Cloud connection via the MCP se
 
 ## How the connection works
 
-This plugin connects to DataHub Cloud via the MCP server at `https://mcp.datahub.com/mcp`. Authentication is handled automatically via OAuth — no tokens or environment variables needed.
+This plugin connects to the DataHub MCP server over OAuth — no tokens or environment variables needed.
+
+- **Claude Code** connects to the URL entered in the plugin's **DataHub MCP URL** setting: the tenant's own endpoint, such as `https://your-company.acryl.io/mcp`, or the shared gateway `https://mcp.datahub.com/mcp`. A valid value is an `https://` URL ending in `/mcp`. Change it in `/config` or by re-enabling the plugin.
+- **Codex and other Agent Plugins clients** connect to the shared gateway at `https://mcp.datahub.com/mcp`.
 
 ## Verification workflow
 
@@ -49,7 +52,8 @@ This plugin connects to DataHub Cloud via the MCP server at `https://mcp.datahub
 |---|---|---|
 | 401 Unauthorized | OAuth session expired | Re-authenticate via the MCP OAuth flow |
 | 403 Forbidden | Insufficient permissions | Contact your DataHub admin |
-| Connection timeout | Network can't reach mcp.datahub.com | Check firewall or VPN settings |
+| Connection fails right away, or the URL looks wrong | DataHub MCP URL isn't an `https://` URL ending in `/mcp` | Correct the plugin's DataHub MCP URL setting |
+| Connection timeout | Network can't reach the configured MCP URL | Check firewall or VPN settings. If the tenant only allows traffic from known IPs, use `https://mcp.datahub.com/mcp` instead |
 | Empty results, new instance | No metadata ingested yet | Normal — not a fault. Confirm with the DataHub admin before debugging further |
 | Empty results, established instance | Auth works but permissions are limited | Contact your DataHub admin to expand access |
 

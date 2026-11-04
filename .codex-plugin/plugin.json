@@ -1,6 +1,6 @@
 {
   "name": "datahub-cloud",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "DataHub Cloud plugin \u2014 search the catalog, trace lineage, check data quality, and write SQL grounded in real metadata via the DataHub Cloud MCP server.",
   "author": {
     "name": "Acryl Data, Inc.",
@@ -21,7 +21,7 @@
     "data-engineering"
   ],
   "skills": "./skills",
-  "mcpServers": "./.mcp.json",
+  "mcpServers": "./.codex-plugin/mcp.json",
   "interface": {
     "displayName": "DataHub Cloud",
     "shortDescription": "Trustworthy Data & Context",
