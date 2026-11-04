@@ -31,9 +31,42 @@ codex plugin add datahub-cloud@datahub-cloud-ai-plugins
 
 ## Authentication
 
-The plugin connects to `https://mcp.datahub.com/mcp` over **OAuth 2.0 with dynamic
-client registration** — no tokens, tenant URLs or environment variables, and no
-credentials in the repo.
+The plugin connects to the DataHub MCP server over **OAuth 2.0 with dynamic
+client registration** — no tokens or environment variables, and no credentials in
+the repo.
+
+**Claude Code** asks for a **DataHub MCP URL** when the plugin is enabled. Enter
+your tenant's endpoint, any `https://` URL ending in `/mcp`:
+
+| Deployment | DataHub MCP URL |
+| --- | --- |
+| DataHub Cloud | `https://<tenant>.acryl.io/mcp` or `https://<tenant>.datahub.com/mcp` |
+| Custom domain | `https://<your-domain>/mcp` |
+| Shared gateway (for example, a tenant behind an IP allowlist) | `https://mcp.datahub.com/mcp` |
+
+Connecting straight to the tenant skips the gateway's tenant-selection screen.
+Change the value later in `/config`.
+
+**Codex and other Agent Plugins clients** connect to the shared gateway at
+`https://mcp.datahub.com/mcp` by default. Agent Plugins 1.0.0 forbids substitution
+in remote MCP URLs, and Codex has no install-time prompt for one, so these
+manifests keep a fixed endpoint.
+
+To point Codex at your tenant instead, declare a top-level MCP server named
+`datahub` in Codex config. A server in Codex config takes precedence over a
+plugin's server of the same name, and the plugin's skills keep working:
+
+```toml
+# ~/.codex/config.toml
+[mcp_servers.datahub]
+url = "https://<tenant>.acryl.io/mcp"
+```
+
+Admins can roll this out to everyone through Codex's managed configuration
+(for example `/etc/codex/config.toml`, MDM or cloud-managed config) instead of
+asking each user to edit their own file. The per-plugin setting
+`plugins.<plugin>.mcp_servers.<server>` can't do this: it only controls
+enablement and tool policy, and Codex rejects a `url` there.
 
 Sign in once, from a session:
 
@@ -131,7 +164,7 @@ One plugin, described to three clients:
 | Manifest | Read by | MCP config |
 | --- | --- | --- |
 | `.claude-plugin/plugin.json` | Claude Code | `.mcp.json` |
-| `.codex-plugin/plugin.json` | Codex | `.mcp.json` (this one declares `skills`) |
+| `.codex-plugin/plugin.json` | Codex | `.codex-plugin/mcp.json` (this one declares `skills`) |
 | `plugin.json` | Agent Plugins 1.0.0 clients | `mcp.json` |
 
 They repeat the same identity — name, version, description, author, license,
@@ -141,16 +174,24 @@ the `.codex-plugin/plugin.json` interface is a compatibility fallback. Keep thos
 two interface blocks in sync. Claude Code's `metadata` block is free-form and it
 does not read it.
 
-The two MCP configs use different transport labels. `.mcp.json` uses
-`"type": "http"` and declares the OAuth resource for Claude Code. The portable
-`mcp.json` uses `"type": "streamable-http"`, as required by the Agent Plugins
-schema. Both point to the same DataHub endpoint.
+The three MCP configs differ in two ways:
+
+- **Transport label.** `.mcp.json` and `.codex-plugin/mcp.json` use
+  `"type": "http"`. The portable `mcp.json` uses `"type": "streamable-http"`, as
+  required by the Agent Plugins schema.
+- **Endpoint.** `.mcp.json` reads its URL from the Claude Code `userConfig`
+  option `datahub_mcp_url` (`${user_config.datahub_mcp_url}`), so it carries no
+  `oauth_resource`; the client takes the resource from the tenant's metadata.
+  `.codex-plugin/mcp.json` and `mcp.json` both point to the shared gateway, and
+  `scripts/package.py` fails the build if they differ.
+
+Codex has its own MCP file because Codex doesn't substitute `${user_config.*}`.
 
 Two things worth knowing when editing by hand:
 
-- **`claude plugin validate` never reads `.mcp.json`.** It validates the plugin
-  manifest only, so a broken MCP config passes validation silently. Check the
-  server actually connects with `/mcp`.
+- **`claude plugin validate` checks `.mcp.json` only on Claude Code v2.1.281 or
+  later**, including that every `${user_config.KEY}` names a declared option.
+  Check the server actually connects with `/mcp` either way.
 - **The primary icon must stay 1:1.** Anthropic's MCP Directory submission
   requires a square SVG; `assets/logo-square.svg` is the square one and
   `assets/logo.svg` is the wide original.

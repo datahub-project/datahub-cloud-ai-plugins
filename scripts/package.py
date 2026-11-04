@@ -13,6 +13,7 @@ FILES = (
     *MANIFESTS,
     "mcp.json",
     ".mcp.json",
+    ".codex-plugin/mcp.json",
     ".agents/plugins/marketplace.json",
     "README.md",
     "assets-NOTICE.md",
@@ -25,6 +26,7 @@ VERSION_PATTERN = re.compile(
     r"(?:\+[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*)?",
     re.ASCII,
 )
+USER_CONFIG_REFERENCE = re.compile(r"\$\{user_config\.([A-Za-z_][A-Za-z0-9_]*)\}")
 
 
 def read_json(root: Path, relative: str) -> dict:
@@ -80,11 +82,17 @@ def validate(root: Path, paths: list[Path], tag: str | None) -> tuple[str, str]:
         raise ValueError("The local marketplace must include the portable plugin")
 
     portable_mcp = read_json(root, "mcp.json")["mcpServers"]
-    legacy_mcp = read_json(root, ".mcp.json")["mcpServers"]
-    if not portable_mcp or portable_mcp.keys() != legacy_mcp.keys():
+    claude_mcp = read_json(root, ".mcp.json")["mcpServers"]
+    codex_mcp = read_json(root, ".codex-plugin/mcp.json")["mcpServers"]
+    if (
+        not portable_mcp
+        or portable_mcp.keys() != claude_mcp.keys()
+        or portable_mcp.keys() != codex_mcp.keys()
+    ):
         raise ValueError(
             "Portable and client MCP configurations must name the same servers"
         )
+    user_config = manifests[1].get("userConfig", {})
     for server, config in portable_mcp.items():
         if config.get("type") != "streamable-http" or not config.get(
             "url", ""
@@ -92,7 +100,21 @@ def validate(root: Path, paths: list[Path], tag: str | None) -> tuple[str, str]:
             raise ValueError(
                 f"Portable MCP server {server} must use streamable-http and HTTPS"
             )
-        if legacy_mcp[server].get("url") != config["url"]:
+        if codex_mcp[server].get("url") != config["url"]:
+            raise ValueError(
+                f"MCP endpoint differs between configurations for {server}"
+            )
+        # Claude Code substitutes an admin-entered URL from userConfig; every
+        # other client keeps the portable endpoint.
+        claude_url = claude_mcp[server].get("url", "")
+        reference = USER_CONFIG_REFERENCE.fullmatch(claude_url)
+        if reference:
+            if reference.group(1) not in user_config:
+                raise ValueError(
+                    f"Claude MCP server {server} references undeclared "
+                    f"userConfig option {reference.group(1)}"
+                )
+        elif claude_url != config["url"]:
             raise ValueError(
                 f"MCP endpoint differs between configurations for {server}"
             )

@@ -49,6 +49,7 @@ class PackageTests(unittest.TestCase):
             self.assertIn("datahub-cloud/mcp.json", names)
             self.assertIn("datahub-cloud/.claude-plugin/plugin.json", names)
             self.assertIn("datahub-cloud/.codex-plugin/plugin.json", names)
+            self.assertIn("datahub-cloud/.codex-plugin/mcp.json", names)
             self.assertIn("datahub-cloud/skills/datahub-search/SKILL.md", names)
             self.assertIn("datahub-cloud/.agents/plugins/marketplace.json", names)
             self.assertIn("datahub-cloud/assets/logo-square.svg", names)
@@ -104,11 +105,37 @@ class PackageTests(unittest.TestCase):
             build(self.root, self.output)
 
     def test_endpoint_mismatch(self):
+        for relative in (".mcp.json", ".codex-plugin/mcp.json"):
+            with self.subTest(relative=relative):
+                original = (self.root / relative).read_text()
+                self.edit_manifest(
+                    relative,
+                    mcpServers={
+                        "datahub": {"type": "http", "url": "https://example.com/mcp"}
+                    },
+                )
+                with self.assertRaisesRegex(ValueError, "MCP endpoint differs"):
+                    build(self.root, self.output)
+                (self.root / relative).write_text(original)
+
+    def test_claude_url_comes_from_user_config(self):
+        claude_mcp = json.loads((self.root / ".mcp.json").read_text())
+        self.assertEqual(
+            claude_mcp["mcpServers"]["datahub"]["url"],
+            "${user_config.datahub_mcp_url}",
+        )
+        manifest = json.loads((self.root / ".claude-plugin/plugin.json").read_text())
+        self.assertTrue(manifest["userConfig"]["datahub_mcp_url"]["required"])
+        build(self.root, self.output)
+
+    def test_undeclared_user_config_reference(self):
         self.edit_manifest(
             ".mcp.json",
-            mcpServers={"datahub": {"type": "http", "url": "https://example.com/mcp"}},
+            mcpServers={
+                "datahub": {"type": "http", "url": "${user_config.missing_option}"}
+            },
         )
-        with self.assertRaisesRegex(ValueError, "MCP endpoint differs"):
+        with self.assertRaisesRegex(ValueError, "undeclared userConfig option"):
             build(self.root, self.output)
 
     def test_missing_skill(self):
