@@ -20,7 +20,7 @@ Help users verify and troubleshoot their DataHub Cloud connection via the MCP se
 This plugin connects to the DataHub MCP server over OAuth — no tokens or environment variables needed.
 
 - **Claude Code** connects to the URL entered in the plugin's **DataHub MCP URL** setting: the tenant's own endpoint, such as `https://your-company.acryl.io/mcp`, or the shared gateway `https://mcp.datahub.com/mcp`. A valid value is an `https://` URL ending in `/mcp`. Change it in `/config` or by re-enabling the plugin.
-- **Codex and other Agent Plugins clients** connect to the shared gateway at `https://mcp.datahub.com/mcp`.
+- **Codex and other Agent Plugins clients** connect to the shared gateway at `https://mcp.datahub.com/mcp`. In Codex, a `[mcp_servers.datahub]` entry with a tenant `url` in Codex config (`~/.codex/config.toml` or admin-managed config) replaces the plugin's server.
 
 ## Verification workflow
 

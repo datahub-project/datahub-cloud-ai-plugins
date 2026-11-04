@@ -48,9 +48,25 @@ Connecting straight to the tenant skips the gateway's tenant-selection screen.
 Change the value later in `/config`.
 
 **Codex and other Agent Plugins clients** connect to the shared gateway at
-`https://mcp.datahub.com/mcp`. Agent Plugins 1.0.0 forbids substitution in remote
-MCP URLs, and Codex has no install-time prompt for one, so these manifests keep a
-fixed endpoint.
+`https://mcp.datahub.com/mcp` by default. Agent Plugins 1.0.0 forbids substitution
+in remote MCP URLs, and Codex has no install-time prompt for one, so these
+manifests keep a fixed endpoint.
+
+To point Codex at your tenant instead, declare a top-level MCP server named
+`datahub` in Codex config. A server in Codex config takes precedence over a
+plugin's server of the same name, and the plugin's skills keep working:
+
+```toml
+# ~/.codex/config.toml
+[mcp_servers.datahub]
+url = "https://<tenant>.acryl.io/mcp"
+```
+
+Admins can roll this out to everyone through Codex's managed configuration
+(for example `/etc/codex/config.toml`, MDM or cloud-managed config) instead of
+asking each user to edit their own file. The per-plugin setting
+`plugins.<plugin>.mcp_servers.<server>` can't do this: it only controls
+enablement and tool policy, and Codex rejects a `url` there.
 
 Sign in once, from a session:
 
